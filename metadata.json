@@ -1,0 +1,6 @@
+{
+  "name": "BEAST Configurator - Architectural Container Houses",
+  "description": "Premium 1:1 true scale container home configurator with interactive 6-step guided engineering, real-time 3D materials, AR projection, and certified CAD blueprints.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
