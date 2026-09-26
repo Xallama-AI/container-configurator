@@ -1,0 +1,79 @@
+[
+  {
+    "asset": "Grass005",
+    "folder": "grass",
+    "source": "https://ambientcg.com/view?id=Grass005",
+    "license": "CC0",
+    "authors": {
+      "Lennart Demes": "ambientCG"
+    },
+    "resolution": "1K color/normal; 512px AO/roughness",
+    "optimization": "High-quality WebP color/normal, lossless packed AO and roughness"
+  },
+  {
+    "asset": "wooden_floor_02",
+    "folder": "wood/light-oak",
+    "source": "https://polyhaven.com/a/wooden_floor_02",
+    "license": "CC0",
+    "authors": {
+      "Charlotte Baglioni": "Scanning",
+      "Rico Cilliers": "Processing"
+    },
+    "dimensions": [
+      1942.000150680542,
+      1942.000150680542
+    ]
+  },
+  {
+    "asset": "wood_floor",
+    "folder": "wood/natural-oak",
+    "source": "https://polyhaven.com/a/wood_floor",
+    "license": "CC0",
+    "authors": {
+      "Dimitrios Savva": "All"
+    },
+    "dimensions": [
+      1699.9996900558472,
+      1699.9996900558472
+    ]
+  },
+  {
+    "asset": "plank_flooring_02",
+    "folder": "wood/dark-walnut",
+    "source": "https://polyhaven.com/a/plank_flooring_02",
+    "license": "CC0",
+    "authors": {
+      "Dario Barresi": "Processing",
+      "Dimitrios Savva": "Photography"
+    },
+    "dimensions": [
+      1980.0000190734863,
+      1980.0000190734863
+    ]
+  },
+  {
+    "asset": "wood_floor_worn",
+    "folder": "wood/warm-wood",
+    "source": "https://polyhaven.com/a/wood_floor_worn",
+    "license": "CC0",
+    "authors": {
+      "Dimitrios Savva": "All"
+    },
+    "dimensions": [
+      1999.9996423721313,
+      1999.9996423721313
+    ]
+  },
+  {
+    "asset": "exterior_aircon_unit",
+    "source": "https://polyhaven.com/a/exterior_aircon_unit",
+    "license": "CC0",
+    "optimization": "Clean variant only, embedded 512px JPEG textures, binary GLB."
+  },
+  {
+    "asset": "kloofendal_overcast",
+    "source": "https://polyhaven.com/a/kloofendal_overcast",
+    "license": "CC0",
+    "resolution": "1K"
+  }
+]
