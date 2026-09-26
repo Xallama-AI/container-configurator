@@ -127,14 +127,14 @@ export const Navbar: React.FC<NavbarProps> = ({
   };
 
   return (
-    <header className="relative z-40 h-16 w-full flex items-center justify-between px-3 sm:px-5 border-b border-[#1e293b]/90 bg-[#090d16]/96 backdrop-blur-xl shrink-0 select-none shadow-[0_4px_30px_rgba(0,0,0,0.7)]">
+    <header className="app-navbar relative z-40 h-16 w-full flex items-center justify-between px-3 sm:px-5 border-b border-[#1e293b]/90 bg-[#090d16]/96 backdrop-blur-xl shrink-0 select-none shadow-[0_4px_30px_rgba(0,0,0,0.7)]">
       {/* Top Cyber Hairline Accent */}
       <div className="absolute top-0 left-0 right-0 h-[1.5px] bg-gradient-to-r from-transparent via-[#00f0ff]/60 to-transparent pointer-events-none" />
 
       {/* ========================================================= */}
       {/* LEFT: BRAND IDENTITY & BUSINESS NAME                      */}
       {/* ========================================================= */}
-      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+      <div className="navbar-brand flex items-center gap-2 sm:gap-3 shrink-0">
         <BrandLogo size={34} showText={true} />
         {onToggleAiPromptSidebar && (
           <button
@@ -156,7 +156,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       {/* ========================================================= */}
       {/* CENTER: INTERIOR/EXTERIOR SWITCH, AR/VR & VIDEO TOUR      */}
       {/* ========================================================= */}
-      <div className="flex items-center gap-1.5 sm:gap-2.5">
+      <div className="navbar-modes flex items-center gap-1.5 sm:gap-2.5">
         {/* Exterior vs Interior Segmented Switch */}
         <div className="flex items-center gap-1 bg-[#0b101c] p-1 rounded-2xl border border-slate-800 font-mono text-xs shadow-inner">
           <button
@@ -175,7 +175,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             onClick={() => handleToggleInteriorExterior(true)}
             className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl transition font-bold text-xs ${
               modelConfig.cutawayRoof
-                ? 'bg-amber-400 text-black shadow-[0_0_15px_rgba(251,191,36,0.45)]'
+                ? 'bg-[#00f0ff] text-black shadow-[0_0_12px_rgba(0,240,255,0.24)]'
                 : 'text-slate-400 hover:text-white'
             }`}
             title="Interior: Cutaway Roof & Furnished Rooms"
@@ -190,8 +190,8 @@ export const Navbar: React.FC<NavbarProps> = ({
           onClick={handleToggleVideoTour}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-2xl text-xs font-mono font-bold transition border ${
             viewMode === 'cinematic-tour'
-              ? 'bg-cyan-400 text-black border-cyan-400 shadow-[0_0_15px_rgba(0,240,255,0.5)]'
-              : 'bg-[#0e1626] text-cyan-400 hover:text-cyan-300 border-cyan-500/40 hover:bg-cyan-950/30'
+              ? 'bg-[#00f0ff] text-black border-[#00f0ff] shadow-[0_0_12px_rgba(0,240,255,0.24)]'
+              : 'bg-[#090c10] text-slate-300 hover:text-[#00f0ff] border-[#25313a] hover:bg-[#101419]'
           }`}
           title="House Visit Video: Automated 60fps walkthrough tour with operable doors & video recording"
         >
@@ -209,8 +209,8 @@ export const Navbar: React.FC<NavbarProps> = ({
           onClick={handleToggleVR}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-2xl text-xs font-mono font-bold transition border ${
             viewMode === 'walkthrough-vr' || viewMode === 'vr-walkthrough'
-              ? 'bg-purple-500 text-white border-purple-400 shadow-[0_0_15px_rgba(168,85,247,0.5)]'
-              : 'bg-[#0e1626] text-purple-400 hover:text-purple-300 border-purple-500/40 hover:bg-purple-950/30'
+              ? 'bg-[#00f0ff] text-black border-[#00f0ff] shadow-[0_0_12px_rgba(0,240,255,0.24)]'
+              : 'bg-[#090c10] text-slate-300 hover:text-[#00f0ff] border-[#25313a] hover:bg-[#101419]'
           }`}
           title="VR Feature: 1:1 Scale Immersive Virtual Reality Walkthrough"
         >
@@ -227,7 +227,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             soundFx.playChime();
             onOpenAR();
           }}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl text-xs font-mono font-bold transition border bg-[#0e1626] text-emerald-400 hover:text-emerald-300 border-emerald-500/40 hover:bg-emerald-950/30"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl text-xs font-mono font-bold transition border bg-[#090c10] text-slate-300 hover:text-[#00f0ff] border-[#25313a] hover:bg-[#101419]"
           title="AR Feature: Project house in real-world scale using camera or mobile AR"
         >
           <Camera className="w-4 h-4" />
@@ -258,7 +258,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       {/* ========================================================= */}
       {/* RIGHT: HOUSES SELECTOR, PROMPT AI AGENT & PROFILE         */}
       {/* ========================================================= */}
-      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+      <div className="navbar-actions flex items-center gap-2 sm:gap-3 shrink-0">
         {/* Live Edit Bar Action */}
         {onOpenEditBar && (
           <button
@@ -289,12 +289,12 @@ export const Navbar: React.FC<NavbarProps> = ({
             }}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-mono text-xs font-bold transition border ${
               isRightSidebarOpen && rightSidebarActiveTab === 'houses'
-                ? 'bg-amber-400 text-black border-amber-400 shadow-[0_0_15px_rgba(251,191,36,0.4)]'
-                : 'bg-[#0e1626] text-amber-300 hover:bg-[#1a2214] border-amber-400/40 hover:text-white'
+                ? 'bg-[#00f0ff] text-black border-[#00f0ff] shadow-[0_0_12px_rgba(0,240,255,0.24)]'
+                : 'bg-[#090c10] text-slate-300 hover:bg-[#101419] border-[#25313a] hover:text-[#00f0ff]'
             }`}
             title="Change House Models & Architecture Designs"
           >
-            <Home className="w-3.5 h-3.5 text-amber-400" />
+            <Home className="w-3.5 h-3.5 text-current" />
             <span className="hidden sm:inline">CHANGE HOUSES</span>
             <span className="sm:hidden">HOUSES</span>
           </button>
@@ -307,7 +307,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               soundFx.playChime();
               onOpenAiArchitect();
             }}
-            className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 rounded-xl bg-gradient-to-r from-[#00f0ff] via-[#00d0e6] to-[#00b4d8] hover:brightness-110 text-black font-heading text-xs font-bold shadow-[0_0_20px_rgba(0,240,255,0.4)] transition hover:scale-[1.02] active:scale-[0.98]"
+            className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 rounded-xl bg-[#00f0ff] hover:bg-[#7af6ff] text-black font-heading text-xs font-bold shadow-[0_4px_16px_rgba(0,240,255,0.2)] transition hover:scale-[1.02] active:scale-[0.98]"
             title="Prompt AI Agent: Describe your house & let AI build it"
           >
             <Sparkles className="w-4 h-4" />
@@ -322,7 +322,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           className={`hidden sm:flex p-2 rounded-xl border transition ${
             isSoundMuted
               ? 'bg-red-500/10 border-red-500/30 text-red-400'
-              : 'bg-[#0c121d] hover:bg-slate-800 text-slate-400 hover:text-white border-slate-800'
+              : 'bg-[#090c10] hover:bg-[#151a20] text-slate-400 hover:text-white border-[#25313a]'
           }`}
           title={isSoundMuted ? 'Unmute Sound FX' : 'Mute Sound FX'}
         >
@@ -336,10 +336,10 @@ export const Navbar: React.FC<NavbarProps> = ({
               soundFx.playClick();
               onOpenAdmin();
             }}
-            className="hidden xl:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-purple-500/15 hover:bg-purple-500/25 text-purple-300 border border-purple-500/40 text-xs font-mono font-bold transition"
+            className="hidden xl:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-[#00f0ff]/10 hover:bg-[#00f0ff]/15 text-[#00f0ff] border border-[#00f0ff]/25 text-xs font-mono font-bold transition"
             title="Admin Portal"
           >
-            <ShieldCheck className="w-3.5 h-3.5 text-purple-400" />
+            <ShieldCheck className="w-3.5 h-3.5 text-[#00f0ff]" />
             <span>Admin</span>
             {pendingApprovalsCount > 0 && (
               <span className="flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white">

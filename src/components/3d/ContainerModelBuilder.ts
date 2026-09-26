@@ -267,13 +267,14 @@ export function buildCompleteContainerHouse(modelConfig: ContainerModelConfig): 
 
     const steelMat = new THREE.MeshStandardMaterial({
       color: facadeColor,
-      map: cladding.map,
-      bumpMap: cladding.bumpMap,
       bumpScale: 0.03,
-      normalMap: cladding.map ? undefined : normalMap,
       normalScale: new THREE.Vector2(0.25, 0.25),
       roughness: facadeRoughness,
       metalness: facadeMetalness,
+      ...(cladding.map ? { map: cladding.map } : {}),
+      ...(cladding.bumpMap ? { bumpMap: cladding.bumpMap } : {}),
+      ...(cladding.normalMap || !cladding.map ? { normalMap: cladding.normalMap ?? normalMap } : {}),
+      ...(cladding.roughnessMap ? { roughnessMap: cladding.roughnessMap } : {}),
     });
 
     const railMat = new THREE.MeshStandardMaterial({
@@ -533,10 +534,10 @@ export function buildCompleteContainerHouse(modelConfig: ContainerModelConfig): 
     const flooringPbr = getInteriorFlooringTexture(modelConfig.flooringMaterial || 'chevron-oak');
     const floorMat = new THREE.MeshStandardMaterial({
       map: flooringPbr.map,
-      bumpMap: flooringPbr.bumpMap,
       bumpScale: 0.02,
       roughness: flooringPbr.roughness,
       metalness: modelConfig.flooringMaterial === 'polished-concrete' ? 0.15 : 0.04,
+      ...(flooringPbr.normalMap ? { normalMap: flooringPbr.normalMap } : { bumpMap: flooringPbr.bumpMap }),
     });
     const floorGeo = new THREE.BoxGeometry(unitL - 1, 0.5, unitW - 1);
     const floorMesh = new THREE.Mesh(floorGeo, floorMat);

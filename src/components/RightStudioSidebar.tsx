@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { 
   Building, 
+  Sofa,
   ChevronRight, 
   ChevronLeft, 
   Layers, 
@@ -187,7 +188,7 @@ export const RightStudioSidebar: React.FC<RightStudioSidebarProps> = ({
     <>
       {/* Floating Toggle Tab when right sidebar is closed */}
       {!isOpen && (
-        <div className="absolute top-20 right-3 z-30 flex flex-col gap-2 pointer-events-auto">
+        <div className="studio-shortcuts absolute top-20 right-3 z-30 flex flex-col gap-2 pointer-events-auto">
           <button
             onClick={() => {
               onTabChange('edit');
@@ -208,11 +209,11 @@ export const RightStudioSidebar: React.FC<RightStudioSidebarProps> = ({
               onToggle();
               soundFx.playClick();
             }}
-            className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#0b101c]/90 hover:bg-[#111a2e] border border-amber-400/40 text-amber-300 backdrop-blur-md shadow-[0_4px_25px_rgba(251,191,36,0.25)] transition hover:scale-105 select-none"
+            className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#090c10]/95 hover:bg-[#101419] border border-[#00f0ff]/30 text-[#00f0ff] backdrop-blur-md shadow-[0_4px_18px_rgba(0,240,255,0.12)] transition hover:scale-105 select-none"
             title="Open Houses & Architecture Models Gallery"
           >
-            <ChevronLeft className="w-3.5 h-3.5 text-amber-400" />
-            <Home className="w-3.5 h-3.5 text-amber-400" />
+            <ChevronLeft className="w-3.5 h-3.5 text-[#00f0ff]" />
+            <Home className="w-3.5 h-3.5 text-[#00f0ff]" />
             <span className="font-mono text-[11px] font-bold tracking-wider">HOUSES</span>
           </button>
         </div>
@@ -220,7 +221,7 @@ export const RightStudioSidebar: React.FC<RightStudioSidebarProps> = ({
 
       {/* Docked Right Sidebar */}
       <aside
-        className={`absolute top-0 bottom-0 right-0 z-30 w-80 sm:w-[410px] flex flex-col bg-[#070b14]/96 backdrop-blur-2xl border-l border-slate-800/90 shadow-[-8px_0_40px_rgba(0,0,0,0.9)] transition-transform duration-300 ease-in-out ${
+        className={`studio-panel absolute top-0 bottom-0 right-0 z-30 w-80 sm:w-[410px] flex flex-col bg-[#070b14]/96 backdrop-blur-2xl border-l border-slate-800/90 shadow-[-8px_0_40px_rgba(0,0,0,0.9)] transition-transform duration-300 ease-in-out ${
           isOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
@@ -250,7 +251,7 @@ export const RightStudioSidebar: React.FC<RightStudioSidebarProps> = ({
                 }}
                 className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg font-heading text-xs font-bold transition tracking-wider ${
                   activeTab === 'houses'
-                    ? 'bg-amber-400 text-black shadow-[0_0_15px_rgba(251,191,36,0.4)]'
+                    ? 'bg-[#00f0ff] text-black shadow-[0_0_12px_rgba(0,240,255,0.2)]'
                     : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
                 }`}
               >
@@ -302,7 +303,7 @@ export const RightStudioSidebar: React.FC<RightStudioSidebarProps> = ({
                     : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
                 }`}
               >
-                🛋️ INTERIOR
+                <Sofa className="h-3.5 w-3.5" aria-hidden="true" /> INTERIOR
               </button>
               <button
                 onClick={() => { setEditCategory('doors-windows'); soundFx.playClick(); }}
@@ -312,7 +313,7 @@ export const RightStudioSidebar: React.FC<RightStudioSidebarProps> = ({
                     : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
                 }`}
               >
-                🚪 DOORS & WINDOWS
+                <DoorOpen className="h-3.5 w-3.5" aria-hidden="true" /> DOORS &amp; WINDOWS
               </button>
               <button
                 onClick={() => { setEditCategory('facade'); soundFx.playClick(); }}
@@ -322,7 +323,7 @@ export const RightStudioSidebar: React.FC<RightStudioSidebarProps> = ({
                     : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
                 }`}
               >
-                🎨 FACADE
+                <Palette className="h-3.5 w-3.5" aria-hidden="true" /> FACADE
               </button>
               <button
                 onClick={() => { setEditCategory('roof-ground'); soundFx.playClick(); }}
@@ -332,7 +333,7 @@ export const RightStudioSidebar: React.FC<RightStudioSidebarProps> = ({
                     : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
                 }`}
               >
-                🏗️ ROOF & GROUND
+                <Building className="h-3.5 w-3.5" aria-hidden="true" /> ROOF &amp; GROUND
               </button>
               <button
                 onClick={() => { setEditCategory('outdoor'); soundFx.playClick(); }}
@@ -342,7 +343,7 @@ export const RightStudioSidebar: React.FC<RightStudioSidebarProps> = ({
                     : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
                 }`}
               >
-                🏊 OUTDOOR
+                <TreePine className="h-3.5 w-3.5" aria-hidden="true" /> OUTDOOR
               </button>
             </div>
 
@@ -355,41 +356,41 @@ export const RightStudioSidebar: React.FC<RightStudioSidebarProps> = ({
                     onClick={() => { setInteriorSubcategory('kitchen'); soundFx.playClick(); }}
                     className={`py-1.5 px-1 rounded-lg text-center font-mono text-[10px] font-bold transition ${
                       interiorSubcategory === 'kitchen'
-                        ? 'bg-amber-400/20 text-amber-300 border border-amber-400/40 shadow-sm'
+                        ? 'bg-[#00f0ff]/12 text-[#00f0ff] border border-[#00f0ff]/30 shadow-sm'
                         : 'text-slate-400 hover:text-white'
                     }`}
                   >
-                    🍳 KITCHEN
+                    <Coffee className="mx-auto mb-1 h-3.5 w-3.5" aria-hidden="true" /> KITCHEN
                   </button>
                   <button
                     onClick={() => { setInteriorSubcategory('bedroom'); soundFx.playClick(); }}
                     className={`py-1.5 px-1 rounded-lg text-center font-mono text-[10px] font-bold transition ${
                       interiorSubcategory === 'bedroom'
-                        ? 'bg-indigo-400/20 text-indigo-300 border border-indigo-400/40 shadow-sm'
+                        ? 'bg-[#00f0ff]/12 text-[#00f0ff] border border-[#00f0ff]/30 shadow-sm'
                         : 'text-slate-400 hover:text-white'
                     }`}
                   >
-                    🛏️ BEDROOM
+                    <BedDouble className="mx-auto mb-1 h-3.5 w-3.5" aria-hidden="true" /> BEDROOM
                   </button>
                   <button
                     onClick={() => { setInteriorSubcategory('sitting'); soundFx.playClick(); }}
                     className={`py-1.5 px-1 rounded-lg text-center font-mono text-[10px] font-bold transition ${
                       interiorSubcategory === 'sitting'
-                        ? 'bg-emerald-400/20 text-emerald-300 border border-emerald-400/40 shadow-sm'
+                        ? 'bg-[#00f0ff]/12 text-[#00f0ff] border border-[#00f0ff]/30 shadow-sm'
                         : 'text-slate-400 hover:text-white'
                     }`}
                   >
-                    🛋️ SITTING
+                    <Sofa className="mx-auto mb-1 h-3.5 w-3.5" aria-hidden="true" /> SITTING
                   </button>
                   <button
                     onClick={() => { setInteriorSubcategory('washroom'); soundFx.playClick(); }}
                     className={`py-1.5 px-1 rounded-lg text-center font-mono text-[10px] font-bold transition ${
                       interiorSubcategory === 'washroom'
-                        ? 'bg-cyan-400/20 text-cyan-300 border border-cyan-400/40 shadow-sm'
+                        ? 'bg-[#00f0ff]/12 text-[#00f0ff] border border-[#00f0ff]/30 shadow-sm'
                         : 'text-slate-400 hover:text-white'
                     }`}
                   >
-                    🚿 WASHROOM
+                    <Bath className="mx-auto mb-1 h-3.5 w-3.5" aria-hidden="true" /> WASHROOM
                   </button>
                 </div>
 
@@ -485,7 +486,7 @@ export const RightStudioSidebar: React.FC<RightStudioSidebarProps> = ({
                             }}
                             className={`p-2 rounded-xl border text-left font-semibold transition ${
                               (modelConfig.kitchenType || 'chef-island') === k.id
-                                ? 'border-amber-400 bg-amber-400/10 text-amber-300'
+                                ? 'border-[#00f0ff] bg-[#00f0ff]/10 text-[#00f0ff]'
                                 : 'border-slate-800 bg-slate-900/60 text-slate-300 hover:border-slate-700'
                             }`}
                           >
@@ -1056,7 +1057,7 @@ export const RightStudioSidebar: React.FC<RightStudioSidebarProps> = ({
                         }}
                         className={`p-2.5 rounded-xl border text-left transition ${
                           modelConfig.foundationType === fn.id
-                            ? 'border-amber-400 bg-amber-400/10 text-amber-300'
+                            ? 'border-[#00f0ff] bg-[#00f0ff]/10 text-[#00f0ff]'
                             : 'border-slate-800 bg-slate-900/60 text-slate-300 hover:border-slate-700'
                         }`}
                       >
@@ -1160,7 +1161,7 @@ export const RightStudioSidebar: React.FC<RightStudioSidebarProps> = ({
 
                   {/* Top Row: Luxury Tier & Area */}
                   <div className="flex items-center justify-between gap-2 mb-1.5">
-                    <span className="text-[9px] font-mono font-bold tracking-widest uppercase px-2 py-0.5 rounded-full bg-slate-800/90 text-amber-300 border border-amber-400/30">
+                    <span className="text-[9px] font-mono font-bold tracking-widest uppercase px-2 py-0.5 rounded-full bg-[#0a0d12] text-[#00f0ff] border border-[#00f0ff]/25">
                       {preset.luxuryTier || 'MODULAR VILLA'}
                     </span>
                     <div className="flex items-center gap-1.5 text-[10px] font-mono text-slate-400">
@@ -1190,7 +1191,7 @@ export const RightStudioSidebar: React.FC<RightStudioSidebarProps> = ({
                       {preset.exteriorMaterial?.replace(/-/g, ' ')}
                     </span>
                     {isTwoStory && (
-                      <span className="px-2 py-0.5 rounded-md bg-indigo-950/60 border border-indigo-500/40 text-indigo-300">
+                      <span className="px-2 py-0.5 rounded-md bg-[#0a0d12] border border-[#26323d] text-slate-300">
                         2-STORY TOWER
                       </span>
                     )}

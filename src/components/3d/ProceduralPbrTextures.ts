@@ -3,6 +3,25 @@ import { ExteriorMaterial, FlooringMaterial } from '../../types';
 
 // Texture Cache to ensure zero memory waste and instantaneous reuse
 const textureCache = new Map<string, THREE.Texture>();
+const ambientTextureLoader = new THREE.TextureLoader();
+const ambientPbrCache = new Map<string, { color: THREE.Texture; normal: THREE.Texture; roughness: THREE.Texture }>();
+
+function getAmbientPbrSet(asset: 'Wood095' | 'Concrete034' | 'WoodFloor051', repeatX: number, repeatY: number) {
+  const cached = ambientPbrCache.get(asset);
+  if (cached) return cached;
+  const setup = (suffix: string, colorMap = false) => {
+    const texture = ambientTextureLoader.load(`/textures/ambientcg/${asset}-${suffix}.webp`);
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set(repeatX, repeatY);
+    texture.anisotropy = 4;
+    texture.colorSpace = colorMap ? THREE.SRGBColorSpace : THREE.NoColorSpace;
+    return texture;
+  };
+  const set = { color: setup('Color', true), normal: setup('Normal'), roughness: setup('Roughness') };
+  ambientPbrCache.set(asset, set);
+  return set;
+}
 
 /**
  * Creates or retrieves a procedural normal map for painted container steel
@@ -60,7 +79,16 @@ export function getExteriorCladdingTextures(material: ExteriorMaterial, baseColo
   map?: THREE.Texture;
   bumpMap?: THREE.Texture;
   roughnessMap?: THREE.Texture;
+  normalMap?: THREE.Texture;
 } {
+  if (material === 'swiss-larch' || material === 'shou-sugi-ban') {
+    const wood = getAmbientPbrSet('Wood095', 3, 2);
+    return { map: wood.color, normalMap: wood.normal, roughnessMap: wood.roughness };
+  }
+  if (material === 'concrete-panels' || material === 'alpine-white-stucco') {
+    const concrete = getAmbientPbrSet('Concrete034', 3, 2);
+    return { map: concrete.color, normalMap: concrete.normal, roughnessMap: concrete.roughness };
+  }
   const cacheKey = `exterior-${material}-${baseColorHex}`;
   if (textureCache.has(cacheKey)) {
     return {
@@ -110,85 +138,6 @@ export function getExteriorCladdingTextures(material: ExteriorMaterial, baseColo
       bumpCtx.fillStyle = Math.random() > 0.5 ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.25)';
       bumpCtx.fillRect(bx, by, 2, 2);
     }
-  } else if (material === 'shou-sugi-ban') {
-    // Traditional Japanese Yakisugi charred timber
-    ctx.fillStyle = '#14171a';
-    ctx.fillRect(0, 0, 512, 512);
-
-    bumpCtx.fillStyle = '#808080';
-    bumpCtx.fillRect(0, 0, 512, 512);
-
-    // Vertical plank lines & alligator crack charring
-    const plankW = 42;
-    for (let x = 0; x < 512; x += plankW) {
-      ctx.fillStyle = '#0a0c0e';
-      ctx.fillRect(x, 0, 3, 512);
-      bumpCtx.fillStyle = '#000000';
-      bumpCtx.fillRect(x, 0, 3, 512);
-
-      // Charred alligator fissures
-      for (let y = 0; y < 512; y += 12) {
-        if (Math.random() > 0.35) {
-          ctx.fillStyle = 'rgba(5, 7, 9, 0.8)';
-          ctx.fillRect(x, y + Math.random() * 4, plankW, 2);
-          bumpCtx.fillStyle = 'rgba(20, 20, 20, 0.6)';
-          bumpCtx.fillRect(x, y + Math.random() * 4, plankW, 2);
-        }
-      }
-    }
-  } else if (material === 'swiss-larch') {
-    // Natural warm Alpine larch with vertical tongue-and-groove siding
-    ctx.fillStyle = '#9e7952';
-    ctx.fillRect(0, 0, 512, 512);
-
-    bumpCtx.fillStyle = '#808080';
-    bumpCtx.fillRect(0, 0, 512, 512);
-
-    const plankW = 36;
-    for (let x = 0; x < 512; x += plankW) {
-      // Groove shadow
-      ctx.fillStyle = '#5c4125';
-      ctx.fillRect(x, 0, 2, 512);
-      bumpCtx.fillStyle = '#222222';
-      bumpCtx.fillRect(x, 0, 2, 512);
-
-      // Subtle grain lines within plank
-      ctx.fillStyle = 'rgba(215, 175, 125, 0.2)';
-      for (let g = 4; g < plankW; g += 6) {
-        ctx.fillRect(x + g, 0, 1.5, 512);
-      }
-    }
-  } else if (material === 'concrete-panels') {
-    // Architectural board-formed concrete with tie holes
-    ctx.fillStyle = '#6b7785';
-    ctx.fillRect(0, 0, 512, 512);
-
-    bumpCtx.fillStyle = '#808080';
-    bumpCtx.fillRect(0, 0, 512, 512);
-
-    // Panel joints
-    ctx.strokeStyle = '#3f4752';
-    ctx.lineWidth = 3;
-    ctx.strokeRect(0, 0, 512, 256);
-    ctx.strokeRect(0, 256, 512, 256);
-
-    bumpCtx.strokeStyle = '#111111';
-    bumpCtx.lineWidth = 3;
-    bumpCtx.strokeRect(0, 0, 512, 256);
-    bumpCtx.strokeRect(0, 256, 512, 256);
-
-    // Formwork tie-rod circular indentations
-    [[64, 64], [448, 64], [64, 192], [448, 192], [64, 320], [448, 320], [64, 448], [448, 448]].forEach(([cx, cy]) => {
-      ctx.fillStyle = '#2b323b';
-      ctx.beginPath();
-      ctx.arc(cx, cy, 10, 0, Math.PI * 2);
-      ctx.fill();
-
-      bumpCtx.fillStyle = '#000000';
-      bumpCtx.beginPath();
-      bumpCtx.arc(cx, cy, 10, 0, Math.PI * 2);
-      bumpCtx.fill();
-    });
   } else {
     // Standard Painted Shipping Container Corrugated Metal
     ctx.fillStyle = baseColorHex || '#1e293b';
@@ -235,8 +184,13 @@ export function getExteriorCladdingTextures(material: ExteriorMaterial, baseColo
 export function getInteriorFlooringTexture(flooring: FlooringMaterial): {
   map: THREE.Texture;
   bumpMap: THREE.Texture;
+  normalMap?: THREE.Texture;
   roughness: number;
 } {
+  if (flooring === 'chevron-oak' || flooring === 'smoked-walnut') {
+    const wood = getAmbientPbrSet('WoodFloor051', 2, 1);
+    return { map: wood.color, bumpMap: wood.normal, normalMap: wood.normal, roughness: flooring === 'smoked-walnut' ? 0.52 : 0.38 };
+  }
   const cacheKey = `flooring-${flooring}`;
   if (textureCache.has(`${cacheKey}-map`)) {
     return {
@@ -256,88 +210,7 @@ export function getInteriorFlooringTexture(flooring: FlooringMaterial): {
   bumpCanvas.height = 512;
   const bumpCtx = bumpCanvas.getContext('2d')!;
 
-  if (flooring === 'chevron-oak') {
-    // Warm Natural Scandinavian Chevron / Herringbone Parquet
-    ctx.fillStyle = '#c8a274';
-    ctx.fillRect(0, 0, 512, 512);
-
-    bumpCtx.fillStyle = '#808080';
-    bumpCtx.fillRect(0, 0, 512, 512);
-
-    // Chevron zigzag plank geometry
-    const plankW = 32;
-    const plankH = 64;
-
-    for (let y = 0; y < 512; y += plankH) {
-      for (let x = 0; x < 512; x += plankW * 2) {
-        // Angled left chevron stave
-        ctx.fillStyle = ((x + y) / 32) % 2 === 0 ? '#b89264' : '#d2ac7e';
-        ctx.beginPath();
-        ctx.moveTo(x, y);
-        ctx.lineTo(x + plankW, y + plankH / 2);
-        ctx.lineTo(x + plankW, y + plankH);
-        ctx.lineTo(x, y + plankH / 2);
-        ctx.closePath();
-        ctx.fill();
-
-        // Angled right chevron stave
-        ctx.fillStyle = ((x + y) / 32) % 2 === 0 ? '#d4ae80' : '#bf986a';
-        ctx.beginPath();
-        ctx.moveTo(x + plankW, y + plankH / 2);
-        ctx.lineTo(x + plankW * 2, y);
-        ctx.lineTo(x + plankW * 2, y + plankH / 2);
-        ctx.lineTo(x + plankW, y + plankH);
-        ctx.closePath();
-        ctx.fill();
-
-        // Beveled V-joint groove lines
-        ctx.strokeStyle = '#825e36';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(x, y);
-        ctx.lineTo(x + plankW, y + plankH / 2);
-        ctx.lineTo(x + plankW * 2, y);
-        ctx.stroke();
-
-        bumpCtx.strokeStyle = '#101010';
-        bumpCtx.lineWidth = 2;
-        bumpCtx.beginPath();
-        bumpCtx.moveTo(x, y);
-        bumpCtx.lineTo(x + plankW, y + plankH / 2);
-        bumpCtx.lineTo(x + plankW * 2, y);
-        bumpCtx.stroke();
-      }
-    }
-  } else if (flooring === 'smoked-walnut') {
-    // Rich chocolate wide-plank walnut with long cathedrals
-    ctx.fillStyle = '#3a271d';
-    ctx.fillRect(0, 0, 512, 512);
-
-    bumpCtx.fillStyle = '#808080';
-    bumpCtx.fillRect(0, 0, 512, 512);
-
-    const plankH = 48;
-    for (let y = 0; y < 512; y += plankH) {
-      // Plank tone variation
-      const toneShift = ((y / plankH) % 3) * 8;
-      ctx.fillStyle = `rgb(${58 + toneShift}, ${39 + toneShift / 2}, ${29 + toneShift / 3})`;
-      ctx.fillRect(0, y, 512, plankH - 2);
-
-      // Plank seam
-      ctx.fillStyle = '#1a100b';
-      ctx.fillRect(0, y + plankH - 2, 512, 2);
-
-      bumpCtx.fillStyle = '#0a0a0a';
-      bumpCtx.fillRect(0, y + plankH - 2, 512, 2);
-
-      // Wood grain ripples
-      ctx.fillStyle = 'rgba(95, 65, 45, 0.3)';
-      for (let g = 0; g < 6; g++) {
-        const gy = y + Math.random() * (plankH - 6);
-        ctx.fillRect(0, gy, 512, 1.5);
-      }
-    }
-  } else if (flooring === 'white-terrazzo') {
+  if (flooring === 'white-terrazzo') {
     // Luxury polished Italian terrazzo with multi-colored marble aggregate
     ctx.fillStyle = '#f1f5f9';
     ctx.fillRect(0, 0, 512, 512);

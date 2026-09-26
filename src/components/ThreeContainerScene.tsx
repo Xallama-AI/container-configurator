@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { lazy, Suspense, useEffect, useRef, useState, useCallback } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { 
@@ -71,10 +71,28 @@ import {
 import { buildLandscapingGreenery } from './3d/LandscapingGreenery';
 import { buildCompleteContainerHouse } from './3d/ContainerModelBuilder';
 import { buildArchitecturalModelFloor } from './3d/ArchitecturalSiteGround';
-import { MeasurementsPanel } from './MeasurementsPanel';
-import { HouseVisitVideoModal } from './HouseVisitVideoModal';
-import { VRWalkthroughOverlay } from './VRWalkthroughOverlay';
 import { soundFx } from '../utils/audio';
+
+const MeasurementsPanel = lazy(() => import('./MeasurementsPanel').then((module) => ({ default: module.MeasurementsPanel })));
+const HouseVisitVideoModal = lazy(() => import('./HouseVisitVideoModal').then((module) => ({ default: module.HouseVisitVideoModal })));
+const VRWalkthroughOverlay = lazy(() => import('./VRWalkthroughOverlay').then((module) => ({ default: module.VRWalkthroughOverlay })));
+
+function disposeObjectResources(root: THREE.Object3D) {
+  const geometries = new Set<THREE.BufferGeometry>();
+  const materials = new Set<THREE.Material>();
+  root.traverse((object) => {
+    const resourceObject = object as THREE.Object3D & {
+      geometry?: THREE.BufferGeometry;
+      material?: THREE.Material | THREE.Material[];
+    };
+    if (resourceObject.geometry) geometries.add(resourceObject.geometry);
+    if (Array.isArray(resourceObject.material)) resourceObject.material.forEach((material) => materials.add(material));
+    else if (resourceObject.material) materials.add(resourceObject.material);
+  });
+  root.clear();
+  geometries.forEach((geometry) => geometry.dispose());
+  materials.forEach((material) => material.dispose());
+}
 
 export interface AnimatableAperture {
   key: string;
@@ -324,6 +342,7 @@ export const ThreeContainerScene: React.FC<ThreeContainerSceneProps> = ({
   const animFrameIdRef = useRef<number>(0);
   const containerGroupRef = useRef<THREE.Group | null>(null);
   const siteGroupRef = useRef<THREE.Group | null>(null);
+  const dimensionsGroupRef = useRef<THREE.Group | null>(null);
   const sunLightRef = useRef<THREE.DirectionalLight | null>(null);
 
   // First-person walkthrough state (VR & Minecraft Steve)
@@ -343,6 +362,9 @@ export const ThreeContainerScene: React.FC<ThreeContainerSceneProps> = ({
 
   const [cameraPositionInfo, setCameraPositionInfo] = useState<{ x: number; y: number; z: number }>({ x: 0, y: 0, z: 0 });
   const [isInsideBuilding, setIsInsideBuilding] = useState<boolean>(false);
+  const cameraPositionInfoRef = useRef(cameraPositionInfo);
+  const cameraInfoUpdateTimeRef = useRef(0);
+  const isInsideBuildingRef = useRef(false);
 
   // Graphics Fidelity & Photorealism State
   const [graphicsPreset, setGraphicsPreset] = useState<'ultra' | 'high' | 'balanced'>('ultra');
@@ -407,6 +429,8 @@ export const ThreeContainerScene: React.FC<ThreeContainerSceneProps> = ({
     isOpen: boolean;
     distanceFt: number;
   } | null>(null);
+  const povReticleTargetRef = useRef<typeof povReticleTarget>(null);
+  const povReticleUpdateTimeRef = useRef(0);
   const focusedApertureInPOVRef = useRef<THREE.Object3D | null>(null);
   const executeToggleApertureRef = useRef<(obj: THREE.Object3D) => void>(() => {});
 
@@ -740,9 +764,10 @@ export const ThreeContainerScene: React.FC<ThreeContainerSceneProps> = ({
       powerPreference: 'high-performance'
     });
     renderer.setSize(width, height);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    const isCompactViewport = window.matchMedia('(max-width: 700px)').matches;
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, isCompactViewport ? 1 : 1.25));
     renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.shadowMap.type = THREE.PCFShadowMap;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.08;
     container.appendChild(renderer.domElement);
@@ -785,8 +810,8 @@ export const ThreeContainerScene: React.FC<ThreeContainerSceneProps> = ({
 
     const sunLight = new THREE.DirectionalLight(0xfffaed, 2.4);
     sunLight.castShadow = true;
-    sunLight.shadow.mapSize.width = 2048;
-    sunLight.shadow.mapSize.height = 2048;
+    const shadowMapSize = window.innerWidth <= 700 ? 512 : 1024;
+    sunLight.shadow.mapSize.set(shadowMapSize, shadowMapSize);
     sunLight.shadow.camera.near = 1;
     sunLight.shadow.camera.far = 250;
     sunLight.shadow.camera.left = -60;
@@ -812,6 +837,10 @@ export const ThreeContainerScene: React.FC<ThreeContainerSceneProps> = ({
     const containerGroup = new THREE.Group();
     scene.add(containerGroup);
     containerGroupRef.current = containerGroup;
+
+    const dimensionsGroup = new THREE.Group();
+    containerGroup.add(dimensionsGroup);
+    dimensionsGroupRef.current = dimensionsGroup;
 
     const findInteractiveDoorOrWindow = (obj: THREE.Object3D | null): THREE.Object3D | null => {
       let curr: THREE.Object3D | null = obj;
@@ -1008,10 +1037,14 @@ export const ThreeContainerScene: React.FC<ThreeContainerSceneProps> = ({
     resizeObserver.observe(container);
 
     // Render loop
+    const frameIntervalMs = window.matchMedia('(max-width: 700px)').matches ? 1000 / 24 : 1000 / 30;
     let lastTime = performance.now();
+    let lastFrameTime = 0;
     const animate = () => {
       animFrameIdRef.current = requestAnimationFrame(animate);
       const now = performance.now();
+      if (now - lastFrameTime < frameIntervalMs) return;
+      lastFrameTime = now;
       const deltaSeconds = Math.min((now - lastTime) / 1000, 0.1);
       lastTime = now;
 
@@ -1189,11 +1222,20 @@ export const ThreeContainerScene: React.FC<ThreeContainerSceneProps> = ({
 
       if (cameraRef.current) {
         const camPos = cameraRef.current.position;
-        setCameraPositionInfo({
+        const nextCameraInfo = {
           x: Math.round(camPos.x),
           y: Math.round(camPos.y),
           z: Math.round(camPos.z),
-        });
+        };
+        const previousCameraInfo = cameraPositionInfoRef.current;
+        if (
+          now - cameraInfoUpdateTimeRef.current >= 250 &&
+          (nextCameraInfo.x !== previousCameraInfo.x || nextCameraInfo.y !== previousCameraInfo.y || nextCameraInfo.z !== previousCameraInfo.z)
+        ) {
+          cameraPositionInfoRef.current = nextCameraInfo;
+          cameraInfoUpdateTimeRef.current = now;
+          setCameraPositionInfo(nextCameraInfo);
+        }
 
         // Check if inside container bounding box
         const halfL = mCfg.lengthFt / 2;
@@ -1203,7 +1245,10 @@ export const ThreeContainerScene: React.FC<ThreeContainerSceneProps> = ({
           Math.abs(camPos.z - sCfg.containerOffsetZFt) < halfW &&
           camPos.y >= 0 &&
           camPos.y <= mCfg.heightFt;
-        setIsInsideBuilding(inside);
+        if (inside !== isInsideBuildingRef.current) {
+          isInsideBuildingRef.current = inside;
+          setIsInsideBuilding(inside);
+        }
       }
 
       // Smooth 60fps linear damping for operable doors and windows (hydraulic architectural glide)
@@ -1276,23 +1321,40 @@ export const ThreeContainerScene: React.FC<ThreeContainerSceneProps> = ({
             isCurrentlyOpen = !!(match && match.isOpen);
           }
           const namePart = (u.title || 'Door / Window').split('(')[0].trim();
-          setPovReticleTarget({
+          const nextReticleTarget = {
             name: namePart,
             isOpen: isCurrentlyOpen,
             distanceFt: Math.round(hitDistance * 10) / 10,
-          });
+          };
+          const previousReticleTarget = povReticleTargetRef.current;
+          if (
+            !previousReticleTarget ||
+            previousReticleTarget.name !== nextReticleTarget.name ||
+            previousReticleTarget.isOpen !== nextReticleTarget.isOpen ||
+            (previousReticleTarget.distanceFt !== nextReticleTarget.distanceFt && now - povReticleUpdateTimeRef.current >= 200)
+          ) {
+            povReticleTargetRef.current = nextReticleTarget;
+            povReticleUpdateTimeRef.current = now;
+            setPovReticleTarget(nextReticleTarget);
+          }
         } else {
           focusedApertureInPOVRef.current = null;
-          setPovReticleTarget(null);
+          if (povReticleTargetRef.current !== null) {
+            povReticleTargetRef.current = null;
+            setPovReticleTarget(null);
+          }
         }
       } else {
         if (focusedApertureInPOVRef.current) {
           focusedApertureInPOVRef.current = null;
-          setPovReticleTarget(null);
+          if (povReticleTargetRef.current !== null) {
+            povReticleTargetRef.current = null;
+            setPovReticleTarget(null);
+          }
         }
       }
 
-      renderer.render(scene, camera);
+      if (document.visibilityState === 'visible') renderer.render(scene, camera);
     };
 
     // Interactive Raycaster for Direct Door & Window Cursor Clicks (PC) & Single Touch (Mobile)
@@ -1381,6 +1443,8 @@ export const ThreeContainerScene: React.FC<ThreeContainerSceneProps> = ({
       cancelAnimationFrame(animFrameIdRef.current);
       resizeObserver.disconnect();
       controls.dispose();
+      scene.environment?.dispose();
+      disposeObjectResources(scene);
       renderer.dispose();
       if (container.contains(renderer.domElement)) {
         container.removeChild(renderer.domElement);
@@ -1442,7 +1506,7 @@ export const ThreeContainerScene: React.FC<ThreeContainerSceneProps> = ({
     if (!renderer || !scene || !sunLight) return;
 
     if (graphicsPreset === 'ultra') {
-      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      renderer.shadowMap.type = THREE.PCFShadowMap;
       sunLight.shadow.mapSize.width = 2048;
       sunLight.shadow.mapSize.height = 2048;
       sunLight.shadow.bias = -0.0004;
@@ -1476,11 +1540,7 @@ export const ThreeContainerScene: React.FC<ThreeContainerSceneProps> = ({
     if (!siteGroup) return;
 
     // Clear previous site elements
-    while (siteGroup.children.length > 0) {
-      const obj = siteGroup.children[0];
-      siteGroup.remove(obj);
-      if ('geometry' in obj && obj.geometry) (obj.geometry as THREE.BufferGeometry).dispose();
-    }
+    disposeObjectResources(siteGroup);
 
     const { lotWidthFt, lotDepthFt, containerOffsetXFt, containerOffsetZFt } = siteConfig;
     const { lengthFt, widthFt } = modelConfig;
@@ -1495,7 +1555,14 @@ export const ThreeContainerScene: React.FC<ThreeContainerSceneProps> = ({
       containerOffsetZFt
     );
     siteGroup.add(modelFloor);
-  }, [siteConfig, modelConfig]);
+  }, [siteConfig.lotWidthFt, siteConfig.lotDepthFt, siteConfig.containerOffsetXFt, siteConfig.containerOffsetZFt, modelConfig.lengthFt, modelConfig.widthFt]);
+
+  useEffect(() => {
+    const containerGroup = containerGroupRef.current;
+    if (!containerGroup) return;
+    containerGroup.position.set(siteConfig.containerOffsetXFt, 0, siteConfig.containerOffsetZFt);
+    containerGroup.rotation.y = (siteConfig.containerRotationDeg * Math.PI) / 180;
+  }, [siteConfig.containerOffsetXFt, siteConfig.containerOffsetZFt, siteConfig.containerRotationDeg]);
 
   // Procedurally Build 3D Container House Model
   useEffect(() => {
@@ -1507,26 +1574,20 @@ export const ThreeContainerScene: React.FC<ThreeContainerSceneProps> = ({
     const isStructural = isStructuralConfigChange(prev, modelConfig);
     prevModelConfigRef.current = { ...modelConfig };
 
-    if (!isStructural && containerGroup.children.length > 0) {
+    const hasBuiltModel = containerGroup.children.some((child) => child !== dimensionsGroupRef.current);
+    if (!isStructural && hasBuiltModel) {
       // Smoothly update aperture targets in real time without destroying 3D meshes!
       updateApertureTargetsFromConfig(modelConfig);
       return;
     }
 
     // Clear old container model
-    while (containerGroup.children.length > 0) {
-      const obj = containerGroup.children[0];
-      containerGroup.remove(obj);
-      if ('geometry' in obj && obj.geometry) (obj.geometry as THREE.BufferGeometry).dispose();
+    for (const child of [...containerGroup.children]) {
+      if (child !== dimensionsGroupRef.current) {
+        containerGroup.remove(child);
+        disposeObjectResources(child);
+      }
     }
-
-    // Set position & rotation from site config
-    containerGroup.position.set(
-      siteConfig.containerOffsetXFt,
-      0,
-      siteConfig.containerOffsetZFt
-    );
-    containerGroup.rotation.y = (siteConfig.containerRotationDeg * Math.PI) / 180;
 
     const {
       lengthFt,
@@ -1558,38 +1619,28 @@ export const ThreeContainerScene: React.FC<ThreeContainerSceneProps> = ({
     animatableAperturesRef.current = apertures;
     updateApertureTargetsFromConfig(modelConfig);
 
-    // --- 3. 3D REAL-SCALE MEASUREMENT CALLOUT LINES ---
-    if (siteConfig.showDimensions) {
-      const dimMat = new THREE.LineBasicMaterial({ color: 0x00f0ff, linewidth: 2 });
+  }, [modelConfig]);
 
-      // Length Dimension Line (Front, along X axis)
-      const lenPoints = [
-        new THREE.Vector3(-lengthFt / 2, baseElevation + 0.5, widthFt / 2 + 2),
-        new THREE.Vector3(lengthFt / 2, baseElevation + 0.5, widthFt / 2 + 2),
-      ];
-      const lenGeo = new THREE.BufferGeometry().setFromPoints(lenPoints);
-      const lenLine = new THREE.Line(lenGeo, dimMat);
-      containerGroup.add(lenLine);
+  useEffect(() => {
+    const dimensionsGroup = dimensionsGroupRef.current;
+    if (!dimensionsGroup) return;
+    disposeObjectResources(dimensionsGroup);
+    if (!siteConfig.showDimensions) return;
 
-      // Width Dimension Line (Side, along Z axis)
-      const widthPoints = [
-        new THREE.Vector3(lengthFt / 2 + 2, baseElevation + 0.5, -widthFt / 2),
-        new THREE.Vector3(lengthFt / 2 + 2, baseElevation + 0.5, widthFt / 2),
-      ];
-      const widthGeo = new THREE.BufferGeometry().setFromPoints(widthPoints);
-      const widthLine = new THREE.Line(widthGeo, dimMat);
-      containerGroup.add(widthLine);
-
-      // Height Dimension Line (Corner vertical, along Y axis)
-      const heightPoints = [
-        new THREE.Vector3(lengthFt / 2 + 2, baseElevation, widthFt / 2 + 2),
-        new THREE.Vector3(lengthFt / 2 + 2, baseElevation + heightFt, widthFt / 2 + 2),
-      ];
-      const heightGeo = new THREE.BufferGeometry().setFromPoints(heightPoints);
-      const heightLine = new THREE.Line(heightGeo, dimMat);
-      containerGroup.add(heightLine);
+    const { lengthFt, widthFt, heightFt, pierHeightInches } = modelConfig;
+    const baseElevation = pierHeightInches / 12;
+    const dimMat = new THREE.LineBasicMaterial({ color: 0x00f0ff, linewidth: 2 });
+    const lines = [
+      [[-lengthFt / 2, baseElevation + 0.5, widthFt / 2 + 2], [lengthFt / 2, baseElevation + 0.5, widthFt / 2 + 2]],
+      [[lengthFt / 2 + 2, baseElevation + 0.5, -widthFt / 2], [lengthFt / 2 + 2, baseElevation + 0.5, widthFt / 2]],
+      [[lengthFt / 2 + 2, baseElevation, widthFt / 2 + 2], [lengthFt / 2 + 2, baseElevation + heightFt, widthFt / 2 + 2]],
+    ];
+    for (const points of lines) {
+      const geometry = new THREE.BufferGeometry().setFromPoints(points.map(([x, y, z]) => new THREE.Vector3(x, y, z)));
+      dimensionsGroup.add(new THREE.Line(geometry, dimMat));
     }
-  }, [modelConfig, siteConfig]);
+    return () => dimMat.dispose();
+  }, [siteConfig.showDimensions, modelConfig.lengthFt, modelConfig.widthFt, modelConfig.heightFt, modelConfig.pierHeightInches]);
 
   // Handle First-Person Mode input handlers (Walkthrough VR & Minecraft Steve FPV)
   useEffect(() => {
@@ -1781,561 +1832,20 @@ export const ThreeContainerScene: React.FC<ThreeContainerSceneProps> = ({
       {/* WebGL Canvas Container */}
       <div ref={mountRef} className="w-full h-full cursor-grab active:cursor-grabbing touch-none" />
 
-      {/* Beast UI Cyber Reticle Overlays (Corner brackets on viewport) */}
-      <div className="absolute top-3 left-3 w-4 h-4 border-t-2 border-l-2 border-[#00f0ff]/35 pointer-events-none z-10" />
-      <div className="absolute top-3 right-3 w-4 h-4 border-t-2 border-r-2 border-[#00f0ff]/35 pointer-events-none z-10" />
-      <div className="absolute bottom-3 left-3 w-4 h-4 border-b-2 border-l-2 border-[#00f0ff]/35 pointer-events-none z-10" />
-      <div className="absolute bottom-3 right-3 w-4 h-4 border-b-2 border-r-2 border-[#00f0ff]/35 pointer-events-none z-10" />
-
-      {/* Beast UI Viewport HUD Watermark */}
-      <div className="absolute bottom-2.5 right-12 z-10 pointer-events-none hidden md:flex items-center gap-2 font-mono text-[9px] text-slate-500/80 uppercase tracking-wider">
-        <span className="h-1.5 w-1.5 rounded-full bg-[#00f0ff]/50" />
-        <span>BEAST UI ARCH ENGINE</span>
-        <span>•</span>
-        <span>1:1 SCALE VERIFIED</span>
-      </div>
-
-      {/* Snapshot Download Confirmation Toast (Top Right Corner) */}
-      {snapshotToast && (
-        <div className="absolute top-16 right-3 sm:right-4 z-50 flex items-center gap-3 rounded-xl bg-[#0d121c]/95 px-4 py-2.5 border border-[#00f0ff]/50 shadow-[0_0_30px_rgba(0,240,255,0.3)] backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-300">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#00f0ff]/20 text-[#00f0ff]">
-            <Check className="w-4 h-4" />
-          </div>
-          <div>
-            <div className="text-xs font-bold text-white tracking-wide">4K Snapshot Saved</div>
-            <div className="text-[10px] text-slate-400 font-mono">BeastUI_{modelConfig.name.replace(/[^a-zA-Z0-9]/g, '_')}_4K_CAD.png</div>
-          </div>
-        </div>
-      )}
-
-      {/* Interactive Door / Window Toggled Notification Toast (Top Right Corner) */}
-      {interactionToast && (
-        <div className="absolute top-16 right-3 sm:right-4 z-50 flex items-center gap-3 rounded-xl bg-[#0d121c]/95 px-4 py-2.5 border border-[#00f0ff]/60 shadow-[0_0_30px_rgba(0,240,255,0.35)] backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-300 max-w-xs">
-          <div className={`flex h-7 w-7 items-center justify-center rounded-lg ${interactionToast.isOpen ? 'bg-emerald-500/20 text-emerald-400' : 'bg-[#00f0ff]/20 text-[#00f0ff]'}`}>
-            {interactionToast.isOpen ? <DoorOpen className="w-4 h-4" /> : <DoorClosed className="w-4 h-4" />}
-          </div>
-          <div>
-            <div className="text-xs font-bold text-white tracking-wide flex items-center gap-2">
-              <span>{interactionToast.title}</span>
-              <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded font-bold ${interactionToast.isOpen ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-700 text-slate-300'}`}>
-                {interactionToast.isOpen ? 'OPEN' : 'CLOSED'}
-              </span>
-            </div>
-            <div className="text-[10px] text-slate-400 font-sans truncate max-w-[200px]">{interactionToast.subtitle}</div>
-          </div>
-        </div>
-      )}
-
-      {/* Real-time Hover Prompt for Doors & Windows (Top Right Corner) */}
-      {hoveredPrompt && !interactionToast && viewMode !== 'cinematic-tour' && (
-        <div className="absolute top-28 right-3 sm:right-4 z-40 pointer-events-none flex items-center gap-2 rounded-xl bg-[#0a0f18]/95 px-3 py-1.5 border border-[#00f0ff]/50 shadow-[0_0_20px_rgba(0,240,255,0.25)] backdrop-blur-md animate-in fade-in zoom-in-95 duration-150 text-xs font-mono">
-          <span className="w-2 h-2 rounded-full bg-[#00f0ff] animate-ping" />
-          <span className="text-slate-200">{hoveredPrompt}</span>
-          <span className="text-[#00f0ff] font-bold text-[10px] bg-[#00f0ff]/15 px-1.5 py-0.5 rounded">CLICK TO TOGGLE</span>
-        </div>
-      )}
-
-      {/* ========================================================= */}
-      {/* CINEMATIC VIDEO TOUR PLAYER OVERLAY                       */}
-      {/* ========================================================= */}
-      {viewMode === 'cinematic-tour' ? (
-        <div className="absolute inset-0 pointer-events-none z-30 flex flex-col justify-between">
-          {/* Top Letterbox Bar */}
-          <div className="pointer-events-auto w-full bg-gradient-to-b from-black/90 via-black/70 to-transparent p-4 md:p-6 backdrop-blur-[2px]">
-            <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2 rounded-full bg-[#00f0ff]/15 px-3 py-1 border border-[#00f0ff]/40 text-[#00f0ff]">
-                  <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#00f0ff] opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-[#00f0ff]"></span>
-                  </span>
-                  <span className="text-[11px] font-mono font-bold tracking-wider uppercase">
-                    CINEMATIC WALKTHROUGH
-                  </span>
-                </div>
-                <div className="hidden sm:inline-flex rounded bg-black/60 px-2 py-0.5 border border-slate-800 text-[10px] font-mono text-slate-400">
-                  4K 60FPS • ARCHITECTURAL CUT
-                </div>
-              </div>
-
-              {/* Current Shot Information */}
-              <div className="text-left sm:text-right">
-                <div className="text-xs font-mono font-bold text-white tracking-wide flex items-center gap-2">
-                  <span className="text-[#00f0ff]">SHOT {currentShotIndex + 1}/{TOUR_SHOTS.length}:</span>
-                  <span>{currentShot.title}</span>
-                </div>
-                <div className="text-[11px] text-slate-400 font-sans">{currentShot.subtitle}</div>
-              </div>
-
-              {/* Close Tour Button */}
-              <button
-                onClick={() => onViewModeChange('3d-orbit')}
-                className="pointer-events-auto rounded-lg bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 text-xs font-medium border border-white/20 transition flex items-center gap-1.5"
-              >
-                <X className="w-3.5 h-3.5" />
-                <span>Exit Tour</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Center Cinematic Reticle / Subtle Watermark */}
-          <div className="flex-1 flex items-end p-6 justify-between opacity-80 pointer-events-none">
-            <div className="text-xs font-mono text-slate-400 bg-black/40 px-3 py-1.5 rounded-lg border border-slate-800 backdrop-blur-sm">
-              <span className="text-[#00f0ff] font-bold">GRID &amp; LOGIC</span> • 1:1 REAL SCALE CLIENT ENGINE
-            </div>
-            <div className="text-xs font-mono text-slate-400 bg-black/40 px-3 py-1.5 rounded-lg border border-slate-800 backdrop-blur-sm hidden md:block">
-              SITE: {siteConfig.siteDimensionsFt.width} × {siteConfig.siteDimensionsFt.depth} FT • {modelConfig.layoutType.toUpperCase()}
-            </div>
-          </div>
-
-          {/* Bottom Video Controller Bar */}
-          <div className="pointer-events-auto w-full bg-gradient-to-t from-black/95 via-black/80 to-transparent p-4 md:p-6 backdrop-blur-[2px]">
-            <div className="max-w-4xl mx-auto flex flex-col gap-3">
-              {/* Shot Timeline Buttons */}
-              <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
-                {TOUR_SHOTS.map((shot, idx) => (
-                  <button
-                    key={shot.id}
-                    onClick={() => {
-                      tourProgressRef.current = 0;
-                      tourShotIndexRef.current = idx;
-                      setCurrentShotIndex(idx);
-                      setIsPlayingTour(true);
-                      isPlayingTourRef.current = true;
-                    }}
-                    className={`group relative flex flex-col items-start p-2 rounded-lg border transition text-left ${
-                      idx === currentShotIndex
-                        ? 'bg-[#00f0ff]/20 border-[#00f0ff] text-white shadow-[0_0_15px_rgba(0,240,255,0.25)]'
-                        : 'bg-black/60 border-slate-800 text-slate-400 hover:border-slate-600 hover:text-slate-200'
-                    }`}
-                  >
-                    <div className="text-[10px] font-mono font-bold flex items-center gap-1">
-                      <span className={idx === currentShotIndex ? 'text-[#00f0ff]' : 'text-slate-500'}>0{idx + 1}</span>
-                      <span className="truncate hidden sm:inline">{shot.title.split(' ')[0]}</span>
-                    </div>
-                    {/* Active Progress Bar Under Timeline */}
-                    <div className="w-full bg-slate-800 h-1 mt-1.5 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full transition-all duration-150 ${
-                          idx === currentShotIndex ? 'bg-[#00f0ff] w-full' : idx < currentShotIndex ? 'bg-slate-500 w-full' : 'w-0'
-                        }`}
-                      />
-                    </div>
-                  </button>
-                ))}
-              </div>
-
-              {/* Main Playback Controls Bar */}
-              <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
-                <div className="flex items-center gap-2">
-                  {/* Prev Shot */}
-                  <button
-                    onClick={() => {
-                      tourProgressRef.current = 0;
-                      const prevIdx = (currentShotIndex - 1 + TOUR_SHOTS.length) % TOUR_SHOTS.length;
-                      tourShotIndexRef.current = prevIdx;
-                      setCurrentShotIndex(prevIdx);
-                    }}
-                    className="p-2 rounded-lg bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700 transition"
-                    title="Previous Shot"
-                  >
-                    <SkipBack className="w-4 h-4" />
-                  </button>
-
-                  {/* Play / Pause */}
-                  <button
-                    onClick={() => {
-                      const next = !isPlayingTour;
-                      setIsPlayingTour(next);
-                      isPlayingTourRef.current = next;
-                    }}
-                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#00f0ff] hover:bg-[#00d2df] text-black font-bold text-xs shadow-[0_0_20px_rgba(0,240,255,0.4)] transition"
-                  >
-                    {isPlayingTour ? (
-                      <>
-                        <Pause className="w-4 h-4 fill-current" />
-                        <span>Pause</span>
-                      </>
-                    ) : (
-                      <>
-                        <Play className="w-4 h-4 fill-current" />
-                        <span>Play</span>
-                      </>
-                    )}
-                  </button>
-
-                  {/* Next Shot */}
-                  <button
-                    onClick={() => {
-                      tourProgressRef.current = 0;
-                      const nextIdx = (currentShotIndex + 1) % TOUR_SHOTS.length;
-                      tourShotIndexRef.current = nextIdx;
-                      setCurrentShotIndex(nextIdx);
-                    }}
-                    className="p-2 rounded-lg bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700 transition"
-                    title="Next Shot"
-                  >
-                    <SkipForward className="w-4 h-4" />
-                  </button>
-
-                  {/* Speed Selector */}
-                  <div className="flex items-center rounded-lg bg-slate-900/80 border border-slate-700 p-0.5 ml-1">
-                    {[0.75, 1.0, 1.5].map((spd) => (
-                      <button
-                        key={spd}
-                        onClick={() => {
-                          setTourSpeed(spd);
-                          tourSpeedRef.current = spd;
-                        }}
-                        className={`px-2 py-1 rounded text-[10px] font-mono transition ${
-                          tourSpeed === spd ? 'bg-[#00f0ff] text-black font-bold' : 'text-slate-400 hover:text-white'
-                        }`}
-                      >
-                        {spd}x
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Right Action Tools in Video Bar */}
-                <div className="flex items-center gap-2">
-                  {/* Record House Visit Video 60FPS Capture */}
-                  {!isRecordingVideo ? (
-                    <button
-                      onClick={handleStartVideoRecording}
-                      className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-red-600/90 hover:bg-red-500 text-white text-xs font-bold shadow-[0_0_20px_rgba(239,68,68,0.5)] transition active:scale-95"
-                      title="Record High-Definition House Visit Video"
-                    >
-                      <Circle className="w-3.5 h-3.5 fill-current animate-pulse text-white" />
-                      <span>Record House Video</span>
-                    </button>
-                  ) : (
-                    <button
-                      onClick={handleStopVideoRecording}
-                      className="flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-[0_0_20px_rgba(16,185,129,0.5)] transition animate-pulse"
-                      title="Stop Recording and Preview House Visit Video"
-                    >
-                      <Square className="w-3.5 h-3.5 fill-current" />
-                      <span>Stop &amp; View Video ({recordingSeconds}s)</span>
-                    </button>
-                  )}
-
-                  <button
-                    onClick={handleCaptureSnapshot}
-                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-900/80 hover:bg-slate-800 text-slate-200 border border-slate-700 hover:border-[#00f0ff]/50 text-xs font-medium transition"
-                    title="Capture High-Resolution 4K Image for Client"
-                  >
-                    <Camera className="w-3.5 h-3.5 text-[#00f0ff]" />
-                    <span className="hidden sm:inline">Capture 4K Frame</span>
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      const next = !isLooping;
-                      setIsLooping(next);
-                      isLoopingRef.current = next;
-                    }}
-                    className={`px-3 py-2 rounded-lg border text-xs font-medium transition ${
-                      isLooping
-                        ? 'bg-[#00f0ff]/15 border-[#00f0ff]/40 text-[#00f0ff]'
-                        : 'bg-slate-900/80 border-slate-700 text-slate-400'
-                    }`}
-                  >
-                    Loop Tour
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : null}
-
-      {/* ========================================================= */}
-      {/* STANDARD / CLIENT SHOWROOM HUD OVERLAYS                   */}
-      {/* ========================================================= */}
-
-      {/* Showroom Center Focus Mode Active Badge */}
-      {isModelOnlyFocus && viewMode !== 'cinematic-tour' && (
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 pointer-events-auto flex items-center gap-3 rounded-2xl bg-[#090d16]/95 px-4 py-2 border border-[#00f0ff]/40 shadow-[0_0_30px_rgba(0,240,255,0.25)] backdrop-blur-xl animate-in fade-in slide-in-from-top-3">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-[#00f0ff] animate-pulse" />
-            <span className="font-heading text-xs font-bold tracking-wider text-white uppercase">
-              Showroom Focus Mode
-            </span>
-            <span className="text-[10px] font-mono text-[#00f0ff] bg-[#00f0ff]/10 px-2 py-0.5 rounded border border-[#00f0ff]/20">
-              {modelConfig.name}
-            </span>
-          </div>
-          <div className="h-4 w-px bg-slate-800" />
-          <button
-            onClick={() => setIsModelOnlyFocus(false)}
-            className="flex items-center gap-1.5 text-xs font-mono font-bold text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700 px-2.5 py-1 rounded-lg transition"
-          >
-            <Minimize2 className="w-3.5 h-3.5 text-[#00f0ff]" />
-            <span>Exit Focus</span>
-          </button>
-        </div>
-      )}
-
-      {/* Top Left: Clean Architectural Status & Measurements Panel Launcher */}
-      {!isModelOnlyFocus && viewMode !== 'cinematic-tour' && (
-        <div className="absolute top-3 sm:top-4 left-3 sm:left-4 z-10 flex flex-col gap-2 pointer-events-none max-w-[calc(100vw-24px)] sm:max-w-md">
-          {/* Main Status Pill */}
-          <div className="pointer-events-auto flex items-center gap-2 rounded-xl bg-[#0d121c]/92 px-3 py-2 border border-[#1e293b] backdrop-blur-md shadow-2xl">
-            <div className="flex items-center gap-2">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#00f0ff] opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#00f0ff]"></span>
-              </span>
-              <span className="font-heading text-xs font-bold text-white tracking-wide truncate max-w-[140px] sm:max-w-[180px]">
-                {modelConfig.name}
-              </span>
-              <span className="text-[10px] font-mono text-[#00f0ff] bg-[#00f0ff]/15 px-2 py-0.5 rounded font-bold border border-[#00f0ff]/30">
-                {formatLength(modelConfig.lengthFt)} × {formatLength(modelConfig.widthFt)}
-              </span>
-            </div>
-
-            <div className="h-4 w-px bg-slate-800" />
-
-            {/* Direct Launcher to Precision Measurements Panel */}
-            <button
-              onClick={() => setShowMeasurementsPanel(!showMeasurementsPanel)}
-              className="flex items-center gap-1.5 rounded-lg bg-[#00f0ff]/15 hover:bg-[#00f0ff]/25 text-[#00f0ff] px-2.5 py-1 text-[11px] font-mono font-bold border border-[#00f0ff]/40 shadow-[0_0_10px_rgba(0,240,255,0.15)] transition"
-              title="Open Detailed 1:1 Architectural Measurements & Setback Panel"
-            >
-              <Ruler className="w-3.5 h-3.5" />
-              <span>Measurements</span>
-            </button>
-          </div>
-
-          {/* Inside Container Indicator Pill */}
-          {viewMode === 'walkthrough-vr' && isInsideBuilding && (
-            <div className="pointer-events-auto rounded-xl bg-emerald-500/20 border border-emerald-500/50 px-3 py-1.5 backdrop-blur-md shadow-lg text-[11px] font-mono font-bold text-emerald-300 flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
-              <span>INSIDE CONTAINER HOME</span>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Top Right: Camera Angles, Snapshot, or Exit Walkthrough Button */}
-      {!isModelOnlyFocus && viewMode !== 'cinematic-tour' && (
-        <div className="absolute top-3 sm:top-4 right-3 sm:right-4 z-20 flex flex-wrap items-center justify-end gap-2 max-w-[calc(100vw-24px)] pointer-events-none">
-          {viewMode === 'walkthrough-vr' ? (
-            <div className="pointer-events-auto flex items-center gap-2">
-              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#0d121c]/92 border border-[#00f0ff]/40 text-[#00f0ff] text-[11px] font-mono shadow-2xl backdrop-blur-md">
-                <span className="w-2 h-2 rounded-full bg-[#00f0ff] animate-ping" />
-                <span>{isPointerLocked ? 'MOUSE LOOK • [E] INTERACT DOORS/WINDOWS • ESC RELEASE' : 'CLICK VIEWPORT FOR MOUSE LOOK • [E] TO INTERACT'}</span>
-              </div>
-              <button
-                onClick={() => onViewModeChange('3d-orbit')}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-500/25 hover:bg-red-500/40 text-red-200 hover:text-white border border-red-500/60 shadow-[0_0_20px_rgba(239,68,68,0.45)] backdrop-blur-md text-xs font-mono font-bold transition hover:scale-[1.02] active:scale-[0.98]"
-                title="Exit Walkthrough and return to 3D Orbit View"
-              >
-                <X className="w-4 h-4 text-red-400" />
-                <span>EXIT WALKTHROUGH</span>
-              </button>
-            </div>
-          ) : (
-            /* Main Control Pill */
-            <div className="pointer-events-auto flex items-center gap-1 rounded-xl bg-[#0d121c]/92 p-1.5 border border-[#1e293b] backdrop-blur-md shadow-2xl">
-              {/* View presets */}
-              <button
-                onClick={() => handleResetCamera('iso')}
-                title="Isometric 3D View"
-                className="rounded-lg px-2.5 py-1 text-[11px] font-mono font-medium text-slate-300 hover:text-white hover:bg-[#162032] transition"
-              >
-                ISO
-              </button>
-              <button
-                onClick={() => handleResetCamera('top')}
-                title="Top-Down Site Plan View"
-                className="rounded-lg px-2.5 py-1 text-[11px] font-mono font-medium text-slate-300 hover:text-white hover:bg-[#162032] transition"
-              >
-                TOP
-              </button>
-              <button
-                onClick={() => handleResetCamera('front')}
-                title="Front Elevation"
-                className="rounded-lg px-2.5 py-1 text-[11px] font-mono font-medium text-slate-300 hover:text-white hover:bg-[#162032] transition hidden sm:inline-block"
-              >
-                FRONT
-              </button>
-              <button
-                onClick={() => handleResetCamera('side')}
-                title="Side Elevation"
-                className="rounded-lg px-2.5 py-1 text-[11px] font-mono font-medium text-slate-300 hover:text-white hover:bg-[#162032] transition hidden sm:inline-block"
-              >
-                SIDE
-              </button>
-
-              <div className="h-4 w-px bg-slate-800 mx-1" />
-
-              {/* Snapshot Button */}
-              <button
-                onClick={handleCaptureSnapshot}
-                className="p-1.5 rounded-lg text-slate-300 hover:text-[#00f0ff] hover:bg-[#162032] transition"
-                title="Capture 4K Snapshot"
-              >
-                <Camera className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Game Walkthrough Reticle & Touch D-Pad */}
-      {viewMode === 'walkthrough-vr' && (
-        <>
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-30 flex flex-col items-center justify-center gap-2">
-            <div className={`transition-all duration-200 rounded-full flex items-center justify-center ${
-              povReticleTarget 
-                ? 'w-7 h-7 border-2 border-[#00f0ff] bg-[#00f0ff]/15 shadow-[0_0_15px_#00f0ff]' 
-                : 'w-5 h-5 border border-white/60'
-            }`}>
-              <div className={`rounded-full transition-all duration-200 ${
-                povReticleTarget 
-                  ? 'w-2 h-2 bg-white shadow-[0_0_10px_#ffffff]' 
-                  : 'w-1.5 h-1.5 bg-[#00f0ff] shadow-[0_0_8px_#00f0ff]'
-              }`} />
-            </div>
-
-            {/* Dynamic Aperture Target Floating HUD Badge in POV Mode */}
-            {povReticleTarget && (
-              <div className="animate-in fade-in zoom-in-95 duration-150 flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#070b14]/90 border border-[#00f0ff]/60 shadow-[0_4px_20px_rgba(0,240,255,0.3)] backdrop-blur-md">
-                <span className="px-1.5 py-0.5 rounded bg-[#00f0ff]/20 text-[#00f0ff] text-[10px] font-mono font-bold tracking-wider">
-                  [E] or CLICK
-                </span>
-                <span className="text-[11px] font-bold text-white uppercase tracking-wide">
-                  {povReticleTarget.name}
-                </span>
-                <span className={`text-[10px] font-mono font-semibold px-1.5 py-0.2 rounded ${
-                  povReticleTarget.isOpen 
-                    ? 'text-emerald-400 bg-emerald-500/10' 
-                    : 'text-amber-400 bg-amber-500/10'
-                }`}>
-                  {povReticleTarget.isOpen ? 'OPEN' : 'CLOSED'}
-                </span>
-                <span className="text-[10px] font-mono text-slate-400">
-                  {povReticleTarget.distanceFt}ft
-                </span>
-              </div>
-            )}
-          </div>
-
-          <div className="md:hidden absolute bottom-6 right-6 z-30 pointer-events-auto flex flex-col items-center gap-1 p-2.5 rounded-2xl bg-[#090d16]/95 border border-[#00f0ff]/40 shadow-2xl backdrop-blur-xl">
-            <button
-              onPointerDown={() => { fpControlsRef.current.keys.forward = true; }}
-              onPointerUp={() => { fpControlsRef.current.keys.forward = false; }}
-              onPointerLeave={() => { fpControlsRef.current.keys.forward = false; }}
-              className="w-10 h-10 rounded-xl bg-slate-800 active:bg-[#00f0ff] active:text-black text-white font-bold flex items-center justify-center border border-slate-700 shadow"
-            >
-              ▲
-            </button>
-            <div className="flex items-center gap-1">
-              <button
-                onPointerDown={() => { fpControlsRef.current.keys.left = true; }}
-                onPointerUp={() => { fpControlsRef.current.keys.left = false; }}
-                onPointerLeave={() => { fpControlsRef.current.keys.left = false; }}
-                className="w-10 h-10 rounded-xl bg-slate-800 active:bg-[#00f0ff] active:text-black text-white font-bold flex items-center justify-center border border-slate-700 shadow"
-              >
-                ◄
-              </button>
-              <button
-                onPointerDown={() => { fpControlsRef.current.keys.backward = true; }}
-                onPointerUp={() => { fpControlsRef.current.keys.backward = false; }}
-                onPointerLeave={() => { fpControlsRef.current.keys.backward = false; }}
-                className="w-10 h-10 rounded-xl bg-slate-800 active:bg-[#00f0ff] active:text-black text-white font-bold flex items-center justify-center border border-slate-700 shadow"
-              >
-                ▼
-              </button>
-              <button
-                onPointerDown={() => { fpControlsRef.current.keys.right = true; }}
-                onPointerUp={() => { fpControlsRef.current.keys.right = false; }}
-                onPointerLeave={() => { fpControlsRef.current.keys.right = false; }}
-                className="w-10 h-10 rounded-xl bg-slate-800 active:bg-[#00f0ff] active:text-black text-white font-bold flex items-center justify-center border border-slate-700 shadow"
-              >
-                ►
-              </button>
-            </div>
-          </div>
-        </>
-      )}
-
-      {/* Bottom Right: Site Controls Bar (Interactive Site Planning) */}
-      {viewMode !== 'cinematic-tour' && (
-        <div className="absolute bottom-3 sm:bottom-4 right-3 sm:right-4 z-10 flex flex-col items-end gap-2 pointer-events-none">
-          {/* Mobile toggle button for site tools */}
-          <button
-            onClick={() => setSiteToolsOpen(!siteToolsOpen)}
-            className="sm:hidden pointer-events-auto flex items-center gap-1.5 rounded-xl bg-[#0d121c]/92 px-3 py-2 border border-[#1e293b] text-xs font-mono text-[#00f0ff] backdrop-blur-md shadow-xl"
-          >
-            <Sliders className="w-3.5 h-3.5" />
-            <span>Site Tools</span>
-            {siteToolsOpen ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
-          </button>
-
-          {/* Site Planning Control Box */}
-          <div
-            className={`pointer-events-auto flex flex-wrap items-center gap-2 rounded-xl bg-[#0d121c]/92 p-2 border border-[#1e293b] backdrop-blur-md shadow-2xl text-slate-300 text-xs font-mono transition-all duration-200 ${
-              siteToolsOpen ? 'flex' : 'hidden sm:flex'
-            }`}
-          >
-            {/* Sun Angle / Time of Day slider */}
-            <div className="flex items-center gap-2 px-1">
-              <Sun className="w-3.5 h-3.5 text-amber-400" />
-              <span className="text-[11px] text-slate-400 min-w-[38px]">
-                {siteConfig.timeOfDayHours}:00
-              </span>
-              <input
-                type="range"
-                min="6"
-                max="18"
-                step="1"
-                value={siteConfig.timeOfDayHours}
-                onChange={(e) => onUpdateSiteConfig({ timeOfDayHours: parseInt(e.target.value, 10) })}
-                className="w-16 sm:w-20 accent-[#00f0ff] cursor-pointer"
-                title="Adjust Sun Time of Day (Shadow Simulation)"
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Bottom Left: Cardinal Compass Indicator */}
-      {!isModelOnlyFocus && viewMode !== 'cinematic-tour' && (
-        <div className="absolute bottom-3 sm:bottom-4 left-3 sm:left-4 z-10 flex items-center gap-2 rounded-xl bg-[#0d121c]/92 px-3 py-2 border border-[#1e293b] backdrop-blur-md shadow-2xl text-slate-300 text-xs font-mono">
-          <Compass className="w-4 h-4 text-[#00f0ff]" />
-          <span className="hidden sm:inline text-slate-400">Orientation:</span>
-          <span className="font-bold text-white">{siteConfig.orientationCompassDeg}°</span>
-          <button
-            onClick={() =>
-              onUpdateSiteConfig({
-                orientationCompassDeg: (siteConfig.orientationCompassDeg + 45) % 360,
-              })
-            }
-            className="rounded-lg p-1 hover:bg-[#162032] text-slate-400 hover:text-white transition"
-            title="Rotate Cardinal Orientation"
-          >
-            <RotateCw className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      )}
-
       {/* VR Walkthrough Controls & Teleportation HUD */}
       {(viewMode === 'walkthrough-vr' || viewMode === 'vr-walkthrough') && (
-        <VRWalkthroughOverlay
+        <Suspense fallback={null}><VRWalkthroughOverlay
           onExitVR={() => onViewModeChange('3d-orbit')}
           onTeleport={handleVRTeleport}
           onToggleAllDoors={handleToggleAllDoors}
           isAllDoorsOpen={!!modelConfig.frontDoorOpen || !!modelConfig.cargoDoorsOpen}
           isStereoscopic={isStereoscopic}
           onToggleStereoscopic={() => setIsStereoscopic(!isStereoscopic)}
-        />
+        /></Suspense>
       )}
 
       {/* House Visit Video Playback & Download Modal */}
-      <HouseVisitVideoModal
+      {showVideoModal && <Suspense fallback={null}><HouseVisitVideoModal
         isOpen={showVideoModal}
         onClose={() => setShowVideoModal(false)}
         videoBlobUrl={recordedVideoUrl}
@@ -2347,10 +1857,10 @@ export const ThreeContainerScene: React.FC<ThreeContainerSceneProps> = ({
             handleStartVideoRecording();
           }, 600);
         }}
-      />
+      /></Suspense>}
 
       {/* Architectural Precision Measurements & Setbacks Panel */}
-      <MeasurementsPanel
+      {(externalShowMeasurements ?? showMeasurementsPanel) && <Suspense fallback={null}><MeasurementsPanel
         isOpen={externalShowMeasurements !== undefined ? externalShowMeasurements : showMeasurementsPanel}
         onClose={() => {
           setShowMeasurementsPanel(false);
@@ -2360,7 +1870,7 @@ export const ThreeContainerScene: React.FC<ThreeContainerSceneProps> = ({
         siteConfig={siteConfig}
         onUpdateSiteConfig={onUpdateSiteConfig}
         onOpenSpecSheet={onOpenSpecSheet}
-      />
+      /></Suspense>}
     </div>
   );
 };

@@ -185,7 +185,7 @@ export const AiPromptSidebar: React.FC<AiPromptSidebarProps> = ({
       {!isOpen && (
         <button
           onClick={onToggle}
-          className="absolute top-20 left-3 z-30 flex items-center gap-2 px-3 py-2 rounded-xl bg-[#0b101c]/90 hover:bg-[#111a2e] border border-[#00f0ff]/40 text-[#00f0ff] backdrop-blur-md shadow-[0_4px_25px_rgba(0,240,255,0.25)] transition hover:scale-105 select-none"
+          className="ai-prompt-trigger absolute top-20 left-3 z-30 flex items-center gap-2 px-3 py-2 rounded-xl bg-[#0b101c]/90 hover:bg-[#111a2e] border border-[#00f0ff]/40 text-[#00f0ff] backdrop-blur-md shadow-[0_4px_25px_rgba(0,240,255,0.25)] transition hover:scale-105 select-none"
           title="Open AI Prompt & Interior Customizer Sidebar"
         >
           <Sparkles className="w-4 h-4 animate-pulse text-[#00f0ff]" />
@@ -196,7 +196,7 @@ export const AiPromptSidebar: React.FC<AiPromptSidebarProps> = ({
 
       {/* Docked Left Sidebar */}
       <aside
-        className={`absolute top-0 bottom-0 left-0 z-30 w-80 sm:w-96 flex flex-col bg-[#080d18]/95 backdrop-blur-2xl border-r border-slate-800/90 shadow-[4px_0_35px_rgba(0,0,0,0.85)] transition-transform duration-300 ease-in-out ${
+        className={`ai-prompt-panel absolute top-0 bottom-0 left-0 z-30 w-80 sm:w-96 flex flex-col bg-[#080d18]/95 backdrop-blur-2xl border-r border-slate-800/90 shadow-[4px_0_35px_rgba(0,0,0,0.85)] transition-transform duration-300 ease-in-out ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
@@ -242,7 +242,7 @@ export const AiPromptSidebar: React.FC<AiPromptSidebarProps> = ({
             onClick={() => setActiveSubTab('kitchen')}
             className={`flex items-center gap-1 px-2 py-1.5 rounded-lg font-bold transition shrink-0 ${
               activeSubTab === 'kitchen'
-                ? 'bg-amber-400 text-black shadow-[0_0_10px_rgba(251,191,36,0.4)]'
+                ? 'bg-[#00f0ff] text-black shadow-[0_0_10px_rgba(0,240,255,0.2)]'
                 : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
             }`}
           >
@@ -253,7 +253,7 @@ export const AiPromptSidebar: React.FC<AiPromptSidebarProps> = ({
             onClick={() => setActiveSubTab('bedroom')}
             className={`flex items-center gap-1 px-2 py-1.5 rounded-lg font-bold transition shrink-0 ${
               activeSubTab === 'bedroom'
-                ? 'bg-indigo-400 text-black shadow-[0_0_10px_rgba(129,140,248,0.4)]'
+                ? 'bg-[#00f0ff] text-black shadow-[0_0_10px_rgba(0,240,255,0.2)]'
                 : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
             }`}
           >
@@ -275,7 +275,7 @@ export const AiPromptSidebar: React.FC<AiPromptSidebarProps> = ({
             onClick={() => setActiveSubTab('washroom')}
             className={`flex items-center gap-1 px-2 py-1.5 rounded-lg font-bold transition shrink-0 ${
               activeSubTab === 'washroom'
-                ? 'bg-cyan-400 text-black shadow-[0_0_10px_rgba(0,240,255,0.4)]'
+                ? 'bg-[#00f0ff] text-black shadow-[0_0_10px_rgba(0,240,255,0.2)]'
                 : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
             }`}
           >
@@ -402,7 +402,7 @@ export const AiPromptSidebar: React.FC<AiPromptSidebarProps> = ({
                       onClick={() => onUpdateModel({ kitchenColor: cab.id as KitchenColor })}
                       className={`flex items-center gap-2 p-2 rounded-xl border text-left transition ${
                         modelConfig.kitchenColor === cab.id
-                          ? 'border-amber-400 bg-amber-950/20 text-amber-200'
+                          ? 'border-[#00f0ff] bg-[#00f0ff]/10 text-white'
                           : 'border-slate-800 bg-[#0d1424] text-slate-300 hover:border-slate-700'
                       }`}
                     >
@@ -429,7 +429,7 @@ export const AiPromptSidebar: React.FC<AiPromptSidebarProps> = ({
                       onClick={() => onUpdateModel({ kitchenCountertop: ct.id as KitchenCountertop })}
                       className={`p-2 rounded-xl border text-left transition ${
                         (modelConfig.kitchenCountertop || 'calacatta-quartz') === ct.id
-                          ? 'border-amber-400 bg-amber-950/20 text-amber-200'
+                          ? 'border-[#00f0ff] bg-[#00f0ff]/10 text-white'
                           : 'border-slate-800 bg-[#0d1424] text-slate-300 hover:border-slate-700'
                       }`}
                     >
@@ -455,7 +455,7 @@ export const AiPromptSidebar: React.FC<AiPromptSidebarProps> = ({
                       onClick={() => onUpdateModel({ kitchenType: kt.id as KitchenType })}
                       className={`p-2 rounded-xl border text-left transition ${
                         modelConfig.kitchenType === kt.id
-                          ? 'border-amber-400 bg-amber-950/20 text-amber-200'
+                          ? 'border-[#00f0ff] bg-[#00f0ff]/10 text-white'
                           : 'border-slate-800 bg-[#0d1424] text-slate-300 hover:border-slate-700'
                       }`}
                     >
@@ -489,7 +489,7 @@ export const AiPromptSidebar: React.FC<AiPromptSidebarProps> = ({
                       onClick={() => onUpdateModel({ bedroomPalette: bp.id as BedroomPalette })}
                       className={`flex items-center gap-2 p-2 rounded-xl border text-left transition ${
                         (modelConfig.bedroomPalette || 'warm-linen') === bp.id
-                          ? 'border-indigo-400 bg-indigo-950/20 text-indigo-200'
+                          ? 'border-[#00f0ff] bg-[#00f0ff]/10 text-white'
                           : 'border-slate-800 bg-[#0d1424] text-slate-300 hover:border-slate-700'
                       }`}
                     >
@@ -516,7 +516,7 @@ export const AiPromptSidebar: React.FC<AiPromptSidebarProps> = ({
                       onClick={() => onUpdateModel({ bedroomType: bt.id as BedroomType })}
                       className={`p-2 rounded-xl border text-left transition ${
                         (modelConfig.bedroomType || 'master-suite') === bt.id
-                          ? 'border-indigo-400 bg-indigo-950/20 text-indigo-200'
+                          ? 'border-[#00f0ff] bg-[#00f0ff]/10 text-white'
                           : 'border-slate-800 bg-[#0d1424] text-slate-300 hover:border-slate-700'
                       }`}
                     >

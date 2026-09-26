@@ -1844,11 +1844,11 @@ export const ConfiguratorControls: React.FC<ConfiguratorControlsProps> = ({
                         }
                         className="bg-[#111827] border border-slate-700 text-xs font-mono text-[#00f0ff] rounded-lg px-2 py-1 outline-none focus:border-[#00f0ff]"
                       >
-                        <option value="bedroom">🛏️ Bedroom</option>
-                        <option value="bathroom">🛁 Bathroom</option>
-                        <option value="kitchen">🍳 Kitchen</option>
-                        <option value="living">🛋️ Living Room</option>
-                        <option value="office">💻 Home Office</option>
+                        <option value="bedroom">Bedroom</option>
+                        <option value="bathroom">Bathroom</option>
+                        <option value="kitchen">Kitchen</option>
+                        <option value="living">Living Room</option>
+                        <option value="office">Home Office</option>
                       </select>
 
                       <input

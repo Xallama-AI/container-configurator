@@ -46,11 +46,11 @@ export const HousesGallerySidebar: React.FC<HousesGallerySidebarProps> = ({
       {!isOpen && (
         <button
           onClick={onToggle}
-          className="absolute top-20 right-3 z-30 flex items-center gap-2 px-3 py-2 rounded-xl bg-[#0b101c]/90 hover:bg-[#111a2e] border border-amber-400/40 text-amber-300 backdrop-blur-md shadow-[0_4px_25px_rgba(251,191,36,0.25)] transition hover:scale-105 select-none"
+          className="absolute top-20 right-3 z-30 flex items-center gap-2 px-3 py-2 rounded-xl bg-[#090c10]/95 hover:bg-[#101419] border border-[#00f0ff]/30 text-[#00f0ff] backdrop-blur-md shadow-[0_4px_18px_rgba(0,240,255,0.12)] transition hover:scale-105 select-none"
           title="Open Houses & Architecture Models Gallery"
         >
           <ChevronLeft className="w-3.5 h-3.5" />
-          <Home className="w-4 h-4 text-amber-400" />
+          <Home className="w-4 h-4 text-[#00f0ff]" />
           <span className="font-mono text-xs font-bold tracking-wider">CHANGE HOUSES</span>
         </button>
       )}
@@ -64,13 +64,13 @@ export const HousesGallerySidebar: React.FC<HousesGallerySidebarProps> = ({
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3.5 border-b border-slate-800 bg-[#0c1222]/80">
           <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-lg bg-amber-400/10 border border-amber-400/30 text-amber-400">
+            <div className="p-1.5 rounded-lg bg-[#00f0ff]/10 border border-[#00f0ff]/30 text-[#00f0ff]">
               <Building className="w-4 h-4" />
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-heading text-sm font-bold text-white tracking-wider">CHANGE HOUSES</span>
-                <span className="px-1.5 py-0.2 bg-amber-400/20 text-amber-300 border border-amber-400/40 text-[9px] font-mono rounded font-bold">
+                <span className="px-1.5 py-0.2 bg-[#00f0ff]/10 text-[#00f0ff] border border-[#00f0ff]/25 text-[9px] font-mono rounded font-bold">
                   {PRESET_MODELS.length} DESIGNS
                 </span>
               </div>
@@ -110,7 +110,7 @@ export const HousesGallerySidebar: React.FC<HousesGallerySidebarProps> = ({
 
                 {/* Top Row: Luxury Tier & Area */}
                 <div className="flex items-center justify-between gap-2 mb-1.5">
-                  <span className="text-[9px] font-mono font-bold tracking-widest uppercase px-2 py-0.5 rounded-full bg-slate-800/90 text-amber-300 border border-amber-400/30">
+                  <span className="text-[9px] font-mono font-bold tracking-widest uppercase px-2 py-0.5 rounded-full bg-[#0a0d12] text-[#00f0ff] border border-[#00f0ff]/25">
                     {preset.luxuryTier || 'MODULAR VILLA'}
                   </span>
                   <div className="flex items-center gap-1.5 text-[10px] font-mono text-slate-400">
@@ -140,7 +140,7 @@ export const HousesGallerySidebar: React.FC<HousesGallerySidebarProps> = ({
                     {preset.exteriorMaterial?.replace(/-/g, ' ')}
                   </span>
                   {isTwoStory && (
-                    <span className="px-2 py-0.5 rounded-md bg-indigo-950/60 border border-indigo-500/40 text-indigo-300">
+                    <span className="px-2 py-0.5 rounded-md bg-[#0a0d12] border border-[#26323d] text-slate-300">
                       2-STORY TOWER
                     </span>
                   )}
@@ -165,7 +165,7 @@ export const HousesGallerySidebar: React.FC<HousesGallerySidebarProps> = ({
                       ACTIVE IN 3D
                     </span>
                   ) : (
-                    <span className="text-[10px] font-mono text-slate-500 group-hover:text-amber-400 transition">
+                    <span className="text-[10px] font-mono text-slate-500 group-hover:text-[#00f0ff] transition">
                       CLICK TO LOAD →
                     </span>
                   )}

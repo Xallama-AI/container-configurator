@@ -21,8 +21,8 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
         style={{
           width: size,
           height: size,
-          boxShadow: glow ? '0 0 20px rgba(0, 240, 255, 0.45)' : undefined,
-          border: '1px solid rgba(0, 240, 255, 0.4)',
+          boxShadow: glow ? '0 0 14px rgba(0, 240, 255, 0.24)' : undefined,
+          border: '1px solid rgba(0, 240, 255, 0.3)',
         }}
       >
         <svg
@@ -94,15 +94,15 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
       {showText && (
         <div className="flex flex-col leading-tight">
           <div className="flex items-center gap-2">
-            <span className="font-heading font-bold text-base sm:text-lg tracking-wider text-white">
-              GRID <span className="text-[#00f0ff] glow-cyan-text">&amp; LOGIC</span>
+            <span className="font-heading font-bold text-base sm:text-lg tracking-wider text-[#00f0ff]">
+              GRID &amp; LOGIC
             </span>
             <span className="rounded-md bg-[#00f0ff]/15 px-1.5 py-0.5 text-[9px] font-mono font-bold text-[#00f0ff] border border-[#00f0ff]/30 tracking-widest uppercase hidden sm:inline-block">
               MODULAR
             </span>
           </div>
           <span className="text-[9px] sm:text-[10px] font-mono tracking-wider text-slate-400 uppercase font-medium">
-            ARCHITECTURE &bull; ABDUL AHAD
+            CONTAINER DESIGN STUDIO
           </span>
         </div>
       )}

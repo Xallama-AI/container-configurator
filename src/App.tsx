@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { lazy, Suspense, useState, useEffect } from 'react';
 import { 
   ContainerModelConfig, 
   SitePlanningConfig, 
@@ -10,26 +10,16 @@ import {
 import { PRESET_MODELS } from './data/presets';
 import { calculateConfigurationCost } from './utils/calculator';
 import { soundFx } from './utils/audio';
-import { Navbar } from './components/Navbar';
-import { ThreeContainerScene } from './components/ThreeContainerScene';
-import { AuthModal } from './components/AuthModal';
-import { AdminConsoleModal } from './components/AdminConsoleModal';
-import { SpecSheetModal } from './components/SpecSheetModal';
-import { CameraAROverlay } from './components/CameraAROverlay';
-import { ARMobileModal } from './components/ARMobileModal';
-import { KeyboardShortcutsModal } from './components/KeyboardShortcutsModal';
-import { AiArchitectBotModal } from './components/AiArchitectBotModal';
-import { AiPromptSidebar } from './components/AiPromptSidebar';
-import { RightStudioSidebar } from './components/RightStudioSidebar';
-import { generateArchitecturalPdf } from './utils/pdfGenerator';
-import { BrandLogo } from './components/BrandLogo';
-import { 
-  CheckCircle2, 
-  Camera,
-  Bot,
-  Sparkles,
-  Download
-} from 'lucide-react';
+import { ArchitectSidebar } from './components/ArchitectSidebar';
+const ThreeContainerScene = lazy(() => import('./components/ThreeContainerScene').then((module) => ({ default: module.ThreeContainerScene })));
+const AuthModal = lazy(() => import('./components/AuthModal').then((module) => ({ default: module.AuthModal })));
+const AdminConsoleModal = lazy(() => import('./components/AdminConsoleModal').then((module) => ({ default: module.AdminConsoleModal })));
+const SpecSheetModal = lazy(() => import('./components/SpecSheetModal').then((module) => ({ default: module.SpecSheetModal })));
+const CameraAROverlay = lazy(() => import('./components/CameraAROverlay').then((module) => ({ default: module.CameraAROverlay })));
+const ARMobileModal = lazy(() => import('./components/ARMobileModal').then((module) => ({ default: module.ARMobileModal })));
+const KeyboardShortcutsModal = lazy(() => import('./components/KeyboardShortcutsModal').then((module) => ({ default: module.KeyboardShortcutsModal })));
+const AiArchitectBotModal = lazy(() => import('./components/AiArchitectBotModal').then((module) => ({ default: module.AiArchitectBotModal })));
+import { CheckCircle2 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 const FIRST_OWNER_EMAIL = 'abdulahad2086907@gmail.com';
@@ -162,20 +152,36 @@ export default function App() {
   const [showShortcutsModal, setShowShortcutsModal] = useState<boolean>(false);
   const [showMeasurementsModal, setShowMeasurementsModal] = useState<boolean>(false);
   const [showAiArchitectModal, setShowAiArchitectModal] = useState<boolean>(false);
-  const [isAiPromptSidebarOpen, setIsAiPromptSidebarOpen] = useState<boolean>(true); // Open by default for immediate accessibility
+  const [isAiPromptSidebarOpen, setIsAiPromptSidebarOpen] = useState<boolean>(() =>
+    typeof window !== 'undefined' && window.matchMedia('(min-width: 1600px)').matches
+  );
   const [isHousesSidebarOpen, setIsHousesSidebarOpen] = useState<boolean>(false);
   const [rightStudioActiveTab, setRightStudioActiveTab] = useState<'houses' | 'edit'>('edit');
   const [isSoundMuted, setIsSoundMuted] = useState<boolean>(() => soundFx.getIsMuted());
   const [isPresentationMode, setIsPresentationMode] = useState<boolean>(false);
   const [saveToast, setSaveToast] = useState<string | null>(null);
 
+  useEffect(() => {
+    const compactViewport = window.matchMedia('(max-width: 1599px)');
+    const closeDrawersOnCompactViewport = (event: MediaQueryListEvent) => {
+      if (event.matches) {
+        setIsAiPromptSidebarOpen(false);
+        setIsHousesSidebarOpen(false);
+      }
+    };
+
+    compactViewport.addEventListener('change', closeDrawersOnCompactViewport);
+    return () => compactViewport.removeEventListener('change', closeDrawersOnCompactViewport);
+  }, []);
+
   const handleToggleSound = () => {
     const muted = soundFx.toggleMute();
     setIsSoundMuted(muted);
   };
 
-  const handleDownloadPdf = () => {
+  const handleDownloadPdf = async () => {
     soundFx.playSuccess();
+    const { generateArchitecturalPdf } = await import('./utils/pdfGenerator');
     generateArchitecturalPdf(modelConfig, siteConfig, currentUser?.name);
   };
 
@@ -399,7 +405,7 @@ export default function App() {
   const isOwnerAdmin = currentUser?.role === 'super_admin';
 
   return (
-    <div className="relative flex flex-col h-screen w-screen bg-[#05080e] text-slate-100 overflow-hidden font-sans">
+    <div className="app-shell relative flex h-[100dvh] w-screen bg-[#05080e] text-slate-100 overflow-hidden font-sans">
       {/* Save Notification Toast */}
       {saveToast && (
         <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 rounded-xl bg-[#00f0ff] text-black font-semibold px-4 py-2.5 shadow-2xl animate-in fade-in slide-in-from-top-4 duration-200 text-xs">
@@ -408,50 +414,20 @@ export default function App() {
         </div>
       )}
 
-      {/* BEAST LUXURY ARCHITECTURAL NAVBAR */}
-      <Navbar
-        modelConfig={modelConfig}
-        siteConfig={siteConfig}
+      <ArchitectSidebar
+        model={modelConfig}
+        site={siteConfig}
         viewMode={viewMode}
-        onViewModeChange={setViewMode}
-        onSelectPreset={handleSelectPreset}
-        onUpdateSite={handleUpdateSite}
+        estimatedCost={calculateConfigurationCost(modelConfig).totalUsd}
         onUpdateModel={handleUpdateModel}
-        currentUser={currentUser}
-        onOpenAuth={() => setShowAuthModal(true)}
-        onLogout={handleLogout}
-        onOpenAdmin={() => setShowAdminModal(true)}
-        onOpenSpec={() => setShowSpecModal(true)}
-        onOpenAR={() => setShowARMobileModal(true)}
-        onSaveConfig={handleSaveConfig}
-        onOpenMeasurements={() => setShowMeasurementsModal(true)}
-        isOwnerAdmin={isOwnerAdmin}
-        pendingApprovalsCount={pendingApprovalsCount}
-        onToggleShortcuts={() => setShowShortcutsModal(!showShortcutsModal)}
-        isSoundMuted={isSoundMuted}
-        onToggleSound={handleToggleSound}
-        onOpenAiArchitect={() => setShowAiArchitectModal(true)}
-        onDownloadPdf={handleDownloadPdf}
-        onToggleAiPromptSidebar={() => setIsAiPromptSidebarOpen(!isAiPromptSidebarOpen)}
-        isAiPromptSidebarOpen={isAiPromptSidebarOpen}
-        onToggleHousesSidebar={() => setIsHousesSidebarOpen(!isHousesSidebarOpen)}
-        isHousesSidebarOpen={isHousesSidebarOpen}
-        onOpenEditBar={() => {
-          setIsHousesSidebarOpen(true);
-          setRightStudioActiveTab('edit');
-        }}
-        onOpenHouses={() => {
-          setIsHousesSidebarOpen(true);
-          setRightStudioActiveTab('houses');
-        }}
-        isRightSidebarOpen={isHousesSidebarOpen}
-        rightSidebarActiveTab={rightStudioActiveTab}
+        onUpdateSite={handleUpdateSite}
+        onSelectPreset={handleSelectPreset}
+        onViewMode={setViewMode}
+        onSave={handleSaveConfig}
       />
 
-      {/* MAIN WORKSPACE AREA */}
-      <div className="relative flex-1 flex overflow-hidden">
-        {/* 3D Interactive Viewport / Canvas */}
-        <main className="relative flex-1 h-full w-full bg-[#05080e] overflow-hidden">
+      <main className="app-workspace relative flex-1 min-w-0 h-full bg-[#05080e] overflow-hidden">
+        <Suspense fallback={<div className="app-canvas-loading" aria-label="Loading 3D workspace"><span /></div>}>
           <ThreeContainerScene
             modelConfig={modelConfig}
             siteConfig={siteConfig}
@@ -463,49 +439,25 @@ export default function App() {
             onTogglePresentationMode={() => setIsPresentationMode(!isPresentationMode)}
             onOpenSpecSheet={() => setShowSpecModal(true)}
             onOpenARCamera={() => setShowARMobileModal(true)}
-            onOpenCustomizerTab={() => {
-              setIsHousesSidebarOpen(true);
-              setRightStudioActiveTab('edit');
-            }}
+            onOpenCustomizerTab={() => undefined}
             externalShowMeasurements={showMeasurementsModal}
             onCloseMeasurements={() => setShowMeasurementsModal(false)}
           />
+        </Suspense>
 
-          {/* Left-Docked AI Prompt & Generative Architecture Sidebar */}
-          <AiPromptSidebar
-            isOpen={isAiPromptSidebarOpen}
-            onToggle={() => setIsAiPromptSidebarOpen(!isAiPromptSidebarOpen)}
-            modelConfig={modelConfig}
-            siteConfig={siteConfig}
-            onUpdateModel={handleUpdateModel}
-            onApplyConfig={handleSelectPreset}
-          />
-
-          {/* Right-Docked Live Edit Bar & Houses Architecture Studio Sidebar */}
-          <RightStudioSidebar
-            isOpen={isHousesSidebarOpen}
-            onToggle={() => setIsHousesSidebarOpen(!isHousesSidebarOpen)}
-            activeTab={rightStudioActiveTab}
-            onTabChange={setRightStudioActiveTab}
-            modelConfig={modelConfig}
-            siteConfig={siteConfig}
-            onUpdateModel={handleUpdateModel}
-            onSelectHouse={handleSelectPreset}
-          />
-        </main>
-      </div>
+      </main>
 
       {/* MODAL 1: AUTHENTICATION & GOOGLE SIGN-IN */}
-      {showAuthModal && (
+      {showAuthModal && <Suspense fallback={null}>
         <AuthModal
           currentUser={currentUser}
           onLogin={handleLogin}
           onClose={() => setShowAuthModal(false)}
         />
-      )}
+      </Suspense>}
 
       {/* MODAL 2: MASTER ADMIN CONSOLE */}
-      {showAdminModal && currentUser && isOwnerAdmin && (
+      {showAdminModal && currentUser && isOwnerAdmin && <Suspense fallback={null}>
         <AdminConsoleModal
           currentUser={currentUser}
           usersList={usersList}
@@ -516,20 +468,20 @@ export default function App() {
           onUpdateSubdomainConfig={setSubdomainConfig}
           onClose={() => setShowAdminModal(false)}
         />
-      )}
+      </Suspense>}
 
       {/* MODAL 3: CERTIFIED TECHNICAL BLUEPRINT & SPEC SHEET */}
-      {showSpecModal && (
+      {showSpecModal && <Suspense fallback={null}>
         <SpecSheetModal
           modelConfig={modelConfig}
           siteConfig={siteConfig}
           currentUser={currentUser}
           onClose={() => setShowSpecModal(false)}
         />
-      )}
+      </Suspense>}
 
       {/* MODAL 4: CAMERA AR SITE OVERLAY */}
-      {showAROverlay && (
+      {showAROverlay && <Suspense fallback={null}>
         <CameraAROverlay
           modelConfig={modelConfig}
           siteConfig={siteConfig}
@@ -537,24 +489,24 @@ export default function App() {
           onOpenQR={() => setShowARMobileModal(true)}
           onUpdateModelConfig={handleUpdateModel}
         />
-      )}
+      </Suspense>}
 
       {/* MODAL 4B: AR MOBILE QR & DIRECT PHONE URL MODAL */}
-      <ARMobileModal
+      {showARMobileModal && <Suspense fallback={null}><ARMobileModal
         isOpen={showARMobileModal}
         onClose={() => setShowARMobileModal(false)}
         onLaunchLocalAR={() => setShowAROverlay(true)}
         appUrl="https://ais-pre-lrpphggcaos46uchfat5cl-785371161024.asia-southeast1.run.app"
-      />
+      /></Suspense>}
 
       {/* MODAL 5: PROFESSIONAL HOTKEYS & SHORTCUTS */}
-      <KeyboardShortcutsModal
+      {showShortcutsModal && <Suspense fallback={null}><KeyboardShortcutsModal
         isOpen={showShortcutsModal}
         onClose={() => setShowShortcutsModal(false)}
-      />
+      /></Suspense>}
 
       {/* MODAL 6: AI ARCHITECT BOT & GENERATIVE HOUSE DESIGN */}
-      <AiArchitectBotModal
+      {showAiArchitectModal && <Suspense fallback={null}><AiArchitectBotModal
         isOpen={showAiArchitectModal}
         onClose={() => setShowAiArchitectModal(false)}
         currentConfig={modelConfig}
@@ -569,7 +521,7 @@ export default function App() {
             origin: { y: 0.6 },
           });
         }}
-      />
+      /></Suspense>}
     </div>
   );
 }
