@@ -10,6 +10,7 @@ import {
   SlidersHorizontal,
   Home,
   Wallpaper,
+  LayoutGrid,
 } from "lucide-react";
 import {
   CameraFocus,
@@ -26,6 +27,8 @@ import {
   dimensions,
 } from "./config";
 import { useState } from "react";
+import LayoutControls from "./LayoutControls";
+import { ItemKind } from "./layout";
 
 const CATEGORIES: {
   id: Category;
@@ -34,6 +37,7 @@ const CATEGORIES: {
   focus: CameraFocus;
 }[] = [
   { id: "container", label: "Container", icon: Box, focus: "exterior" },
+  { id: "layout", label: "Floor plan & furniture", icon: LayoutGrid, focus: "layout" },
   {
     id: "exterior",
     label: "Exterior finish",
@@ -58,9 +62,16 @@ interface Props {
   onChange: (patch: Partial<StudioConfig>, focus: CameraFocus) => void;
   onFocus: (focus: CameraFocus) => void;
   onSave: () => void;
+  onOpenPlan: () => void;
+  selectedItemId: string | null;
+  layoutNotice: string;
+  onLayoutPreset: (preset: "studio" | "work" | "stay" | "empty") => void;
+  onAddLayoutItem: (kind: ItemKind) => void;
+  onSelectLayoutItem: (id: string) => void;
+  onRemoveLayoutItem: (id: string) => void;
 }
-export default function Controls({ config, onChange, onFocus, onSave }: Props) {
-  const [open, setOpen] = useState<Category | null>("container");
+export default function Controls({ config, onChange, onFocus, onSave, onOpenPlan, selectedItemId, layoutNotice, onLayoutPreset, onAddLayoutItem, onSelectLayoutItem, onRemoveLayoutItem }: Props) {
+  const [open, setOpen] = useState<Category | null>("layout");
   const [saved, setSaved] = useState(false);
   const dim = dimensions(config);
   const choice = (
@@ -163,7 +174,8 @@ export default function Controls({ config, onChange, onFocus, onSave }: Props) {
                 setOpen((previous) =>
                   previous === category.id ? null : category.id,
                 );
-                onFocus(
+                if (category.id === "layout") onOpenPlan();
+                else onFocus(
                   category.id === "windows"
                     ? openingFocus("window", config.windowSide)
                     : category.id === "doors"
@@ -172,7 +184,7 @@ export default function Controls({ config, onChange, onFocus, onSave }: Props) {
                 );
               }}
             >
-              <span className="studio-number">0{index + 1}</span>
+              <span className="studio-number">{String(index + 1).padStart(2, "0")}</span>
               <category.icon size={17} />
               <strong>{category.label}</strong>
               <ChevronDown
@@ -182,6 +194,7 @@ export default function Controls({ config, onChange, onFocus, onSave }: Props) {
             </button>
             {open === category.id && (
               <div className="studio-section-body">
+                {category.id === "layout" && <LayoutControls layout={config.layout} selectedId={selectedItemId} notice={layoutNotice} onPreset={onLayoutPreset} onAdd={onAddLayoutItem} onSelect={onSelectLayoutItem} onRemove={onRemoveLayoutItem}/>}
                 {category.id === "container" && (
                   <>
                     <p className="studio-label">Choose your foundation</p>

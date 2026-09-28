@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { CameraFocus, dimensions, StudioConfig, WINDOWS } from "./config";
+import { windowPosition } from "./layout";
 interface Pose {
   position: THREE.Vector3;
   target: THREE.Vector3;
@@ -49,7 +50,7 @@ export class StudioCamera {
           : h > 1.8
             ? F + h / 2 + 0.035
             : Math.min(B + H - 0.3 - h / 2, F + 1.05 + h / 2);
-      const x = kind === "window" ? -L * 0.26 : L * 0.27;
+      const x = kind === "window" ? windowPosition(L, config.layout) : L * 0.27;
       const distance =
         kind === "window"
           ? Math.max(3, Math.min(window.w, L * 0.32) * 1.6)
@@ -70,6 +71,12 @@ export class StudioCamera {
         position: V(distance * 0.66, H * 0.7 + distance * 0.3, distance * 0.75),
         target: V(0, H * 0.43, 0),
         fov: 40,
+        interior: false,
+      },
+      layout: {
+        position: V(L * 0.16, H + Math.max(7.3, L * 1.1) * fit, Math.max(4.4, L * 0.55) * fit),
+        target: V(0, F, 0),
+        fov: 47,
         interior: false,
       },
       front: {

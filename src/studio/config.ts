@@ -1,3 +1,5 @@
+import { LayoutItem, presetLayout } from "./layout";
+
 export type Side = "left" | "right";
 export type WindowStyle =
   | "none"
@@ -22,6 +24,7 @@ export type FloorFinish =
   | "warm-wood";
 export type Category =
   | "container"
+  | "layout"
   | "exterior"
   | "windows"
   | "doors"
@@ -32,6 +35,7 @@ export type Category =
   | "accessories";
 export type CameraFocus =
   | "exterior"
+  | "layout"
   | "front"
   | "left"
   | "right"
@@ -62,6 +66,7 @@ export interface StudioConfig {
   vents: boolean;
   steps: boolean;
   lights: boolean;
+  layout: LayoutItem[];
 }
 export const DEFAULT_CONFIG: StudioConfig = {
   size: 20,
@@ -80,6 +85,7 @@ export const DEFAULT_CONFIG: StudioConfig = {
   vents: false,
   steps: true,
   lights: true,
+  layout: presetLayout("studio", 6.058),
 };
 export const FINISHES = [
   ["Carbon black", "#1c2021"],

@@ -1,8 +1,7 @@
 # Container Studio
 
-Open `/studio` through the existing development server (`npm run dev`, port 3000).
-The original configurator remains at `/`. The entry point loads only the selected
-version; the original application and its components are unchanged.
+Open `/` through the development server (`npm run dev`). The current entry point
+loads Container Studio.
 
 ## Structure
 
@@ -17,6 +16,35 @@ version; the original application and its components are unchanged.
   interior constraints and responsive framing.
 - `Viewport.tsx`: demand rendering, bounded DPR, cached shadows, resized viewport,
   screenshot export and asynchronous AC attachment with stale-request guards.
+- `FloorPlan.tsx` / `LayoutControls.tsx`: dimensioned 2D plan, templates, object
+  catalog, drag and keyboard placement, grid snapping, collision and entry
+  clearance checks, zoom, selection tools and SVG export.
+- `layout.ts` / `interior.ts`: one metre-based layout shared by the 2D plan and
+  lightweight 3D furniture, kitchenette, divider and bathroom geometry.
+
+## Floor planning
+
+The studio opens in the floor plan with an open-studio example. Users can switch
+between 20 ft and 40 ft containers, choose an open studio, office or short-stay
+template, or start with an empty shell. The catalog covers a bathroom pod with
+shower, toilet and vanity; kitchenette; divider; sofa; tables; chairs; bed;
+desk; and storage. Select and drag items to move them in 10 cm steps. Arrow keys
+move a focused item; R rotates furniture; Delete removes it. The plan displays
+real container dimensions, side openings, a one-metre scale and an entry
+clearance zone. Export downloads an SVG plan, and Save design stores the layout
+locally and downloads a JSON copy. View in 3D opens a roof-cutaway view of the
+same layout.
+
+The catalog is intentionally compact. Planner 5D's public editor emphasizes
+switching between 2D plans and 3D views, furniture placement, dimensions and
+drag-and-drop editing: https://planner5d.com/use/room-planner-tool . Real
+container builders offer bathrooms, kitchenettes, partitions, furniture,
+storage and office fit-outs: https://backcountrycontainers.com/portfolio/ezra/
+and https://www.conexwest.com/blog/40ft-shipping-container-office-floor-plans-layouts-costs .
+
+The drawings are spatial concepts. They do not verify plumbing, electrical,
+structure, accessibility, ventilation or local building rules. Those details
+need professional review before fabrication.
 
 ## Assets and performance
 
@@ -41,15 +69,12 @@ engineering drawing. Oversized glazing is fitted within the selected shell.
 ## Verification
 
 - TypeScript and production build checked.
-- Desktop and 390/320 px mobile layouts visually inspected.
-- Interior/floor/wall views, glazing on both sides, side/rear shutters and both AC
-  units inspected; condenser mounting height and inward lining faces corrected.
-- 27 procedural configurations checked for finite geometry/normals/UVs, with a
-  maximum of 34,666 triangles in the examined configurations (excluding AC assets).
-- Window geometry checked to contain no triangles within the cutout.
-- Fresh studio startup checked without console errors or Three.js warnings.
-- Idle frame counter remained unchanged across observations.
-- Original route rendered and its controls remained available.
+- Floor plan visually inspected at 1440 × 900 and 390 × 844, including 20 ft
+  and 40 ft shells. The roof-cutaway 3D view was checked in the browser.
+- All three templates for both shell lengths passed footprint, overlap and
+  default entry-clearance checks. Adding a bathroom to an empty plan and moving
+  it with the keyboard were checked in the browser.
+- No browser console errors were observed in those flows.
 
-Glass transmission adds rendering passes. These checks establish behavior on the
-development browser; they are not a benchmark across physical mobile devices.
+Glass transmission adds rendering passes. These checks establish behavior in
+the development browser; they are not a benchmark across physical devices.

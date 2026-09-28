@@ -4,6 +4,8 @@ import { dimensions, StudioConfig, WINDOWS } from "./config";
 import { corrugatedWall, Opening, physicalPlane } from "./geometry";
 import { StudioAssets } from "./assets";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
+import { buildInterior } from "./interior";
+import { windowPosition } from "./layout";
 
 export function buildContainer(config: StudioConfig, assets: StudioAssets) {
   const root = new THREE.Group();
@@ -405,7 +407,7 @@ export function buildContainer(config: StudioConfig, assets: StudioAssets) {
       (config.windowSide === side || config.windowSide === "both")
     )
       openings.push({
-        x: -L * 0.26 * sign,
+        x: windowPosition(L, config.layout) * sign,
         y: windowY,
         width: windowW,
         height: windowH,
@@ -577,6 +579,7 @@ export function buildContainer(config: StudioConfig, assets: StudioAssets) {
       white,
     );
   }
+  root.add(buildInterior(config.layout, F));
   // Static fittings and shell sections share one draw call per material.
   root.updateMatrixWorld(true);
   const batches = new Map<THREE.Material, THREE.Mesh[]>();

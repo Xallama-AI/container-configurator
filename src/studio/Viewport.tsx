@@ -7,7 +7,7 @@ import {
 } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import { ArrowDownToLine, RotateCcw } from "lucide-react";
+import { ArrowDownToLine, LayoutGrid, RotateCcw } from "lucide-react";
 import { CameraFocus, CameraRequest, dimensions, StudioConfig } from "./config";
 import { disposeTree, StudioAssets } from "./assets";
 import { physicalPlane } from "./geometry";
@@ -20,9 +20,10 @@ interface Props {
   config: StudioConfig;
   request: CameraRequest;
   onFocus: (focus: CameraFocus) => void;
+  onOpenPlan: () => void;
 }
 export default forwardRef<ViewerHandle, Props>(function Viewport(
-  { config, request, onFocus },
+  { config, request, onFocus, onOpenPlan },
   ref,
 ) {
   const mount = useRef<HTMLDivElement>(null),
@@ -319,8 +320,9 @@ export default forwardRef<ViewerHandle, Props>(function Viewport(
         </div>
       )}
       <div className="studio-camera-bar" aria-label="Camera views">
+        <button type="button" onClick={onOpenPlan}><LayoutGrid size={14}/> Floor plan</button>
         {(
-          ["exterior", "front", "left", "right", "interior"] as CameraFocus[]
+          ["layout", "exterior", "front", "left", "right", "interior"] as CameraFocus[]
         ).map((view) => (
           <button
             type="button"
@@ -329,7 +331,7 @@ export default forwardRef<ViewerHandle, Props>(function Viewport(
             className={request.focus === view ? "selected" : ""}
             onClick={() => onFocus(view)}
           >
-            {view[0].toUpperCase() + view.slice(1)}
+            {view === "layout" ? "Layout 3D" : view[0].toUpperCase() + view.slice(1)}
           </button>
         ))}
       </div>
