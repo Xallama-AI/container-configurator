@@ -69,7 +69,7 @@ export interface StudioConfig {
   layout: LayoutItem[];
 }
 export const DEFAULT_CONFIG: StudioConfig = {
-  size: 20,
+  size: 40,
   highCube: true,
   color: "#373d42",
   windowStyle: "medium",
@@ -85,7 +85,7 @@ export const DEFAULT_CONFIG: StudioConfig = {
   vents: false,
   steps: true,
   lights: true,
-  layout: presetLayout("studio", 6.058),
+  layout: presetLayout("studio", 12.192),
 };
 export const FINISHES = [
   ["Carbon black", "#1c2021"],

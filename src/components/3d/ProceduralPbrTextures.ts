@@ -156,6 +156,7 @@ export function getExteriorCladdingTextures(material: ExteriorMaterial, baseColo
   }
 
   const mapTex = new THREE.CanvasTexture(canvas);
+  mapTex.colorSpace = THREE.SRGBColorSpace;
   mapTex.wrapS = THREE.RepeatWrapping;
   mapTex.wrapT = THREE.RepeatWrapping;
   mapTex.repeat.set(4, 2);

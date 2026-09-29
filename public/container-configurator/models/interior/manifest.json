@@ -1,0 +1,557 @@
+[
+  {
+    "title": "Sofa Three Seat (Bedroom and Living Room Furniture)",
+    "path": "/container-configurator/models/interior/bedroom-and-living-room-furniture/sofa-three-seat-6be9b44b.glb",
+    "source": "https://3dassets.dev/assets/bedroom-and-living-room-furniture-sofa-three-seat-6be9b44b",
+    "downloadUrl": "https://cdn.3dassets.dev/assets/38778/v1/model.glb",
+    "license": "CC0 1.0 Universal",
+    "aiGenerated": true,
+    "triangles": 3140,
+    "sizeMeters": [
+      2.5,
+      0.99,
+      0.92
+    ],
+    "fileSize": 126228
+  },
+  {
+    "title": "Sofa Two Seat (Bedroom and Living Room Furniture)",
+    "path": "/container-configurator/models/interior/bedroom-and-living-room-furniture/sofa-two-seat-904fa140.glb",
+    "source": "https://3dassets.dev/assets/bedroom-and-living-room-furniture-sofa-two-seat-904fa140",
+    "downloadUrl": "https://cdn.3dassets.dev/assets/38777/v1/model.glb",
+    "license": "CC0 1.0 Universal",
+    "aiGenerated": true,
+    "triangles": 2360,
+    "sizeMeters": [
+      1.9,
+      0.99,
+      0.92
+    ],
+    "fileSize": 95752
+  },
+  {
+    "title": "Armchair Lounge (Bedroom and Living Room Furniture)",
+    "path": "/container-configurator/models/interior/bedroom-and-living-room-furniture/armchair-lounge-6873b63b.glb",
+    "source": "https://3dassets.dev/assets/bedroom-and-living-room-furniture-armchair-lounge-6873b63b",
+    "downloadUrl": "https://cdn.3dassets.dev/assets/38780/v1/model.glb",
+    "license": "CC0 1.0 Universal",
+    "aiGenerated": true,
+    "triangles": 1580,
+    "sizeMeters": [
+      0.95,
+      0.99,
+      0.92
+    ],
+    "fileSize": 65220
+  },
+  {
+    "title": "Chaise Lounger (Bedroom and Living Room Furniture)",
+    "path": "/container-configurator/models/interior/bedroom-and-living-room-furniture/chaise-lounger-d1487f42.glb",
+    "source": "https://3dassets.dev/assets/bedroom-and-living-room-furniture-chaise-lounger-d1487f42",
+    "downloadUrl": "https://cdn.3dassets.dev/assets/38782/v1/model.glb",
+    "license": "CC0 1.0 Universal",
+    "aiGenerated": true,
+    "triangles": 1088,
+    "sizeMeters": [
+      0.8,
+      1.061,
+      1.761
+    ],
+    "fileSize": 43564
+  },
+  {
+    "title": "Dining Chair Upholstered (Bedroom and Living Room Furniture)",
+    "path": "/container-configurator/models/interior/bedroom-and-living-room-furniture/dining-chair-upholst-7ec33345.glb",
+    "source": "https://3dassets.dev/assets/bedroom-and-living-room-furniture-dining-chair-upholst-7ec33345",
+    "downloadUrl": "https://cdn.3dassets.dev/assets/38785/v1/model.glb",
+    "license": "CC0 1.0 Universal",
+    "aiGenerated": true,
+    "triangles": 1248,
+    "sizeMeters": [
+      0.49,
+      1.003,
+      0.471
+    ],
+    "fileSize": 51472
+  },
+  {
+    "title": "Dining Table 6-Seat (Bedroom and Living Room Furniture)",
+    "path": "/container-configurator/models/interior/bedroom-and-living-room-furniture/dining-table-6seat-02f48ab1.glb",
+    "source": "https://3dassets.dev/assets/bedroom-and-living-room-furniture-dining-table-6seat-02f48ab1",
+    "downloadUrl": "https://cdn.3dassets.dev/assets/38791/v1/model.glb",
+    "license": "CC0 1.0 Universal",
+    "aiGenerated": true,
+    "triangles": 512,
+    "sizeMeters": [
+      2,
+      0.773,
+      1
+    ],
+    "fileSize": 23780
+  },
+  {
+    "title": "Desk Writing (Bedroom and Living Room Furniture)",
+    "path": "/container-configurator/models/interior/bedroom-and-living-room-furniture/desk-writing-2f6be817.glb",
+    "source": "https://3dassets.dev/assets/bedroom-and-living-room-furniture-desk-writing-2f6be817",
+    "downloadUrl": "https://cdn.3dassets.dev/assets/38795/v1/model.glb",
+    "license": "CC0 1.0 Universal",
+    "aiGenerated": true,
+    "triangles": 1168,
+    "sizeMeters": [
+      1.4,
+      0.745,
+      0.7
+    ],
+    "fileSize": 47052
+  },
+  {
+    "title": "Desk Task Chair (Bedroom and Living Room Furniture)",
+    "path": "/container-configurator/models/interior/bedroom-and-living-room-furniture/desk-task-chair-e1320da0.glb",
+    "source": "https://3dassets.dev/assets/bedroom-and-living-room-furniture-desk-task-chair-e1320da0",
+    "downloadUrl": "https://cdn.3dassets.dev/assets/38786/v1/model.glb",
+    "license": "CC0 1.0 Universal",
+    "aiGenerated": true,
+    "triangles": 1648,
+    "sizeMeters": [
+      0.607,
+      1.04,
+      0.633
+    ],
+    "fileSize": 68252
+  },
+  {
+    "title": "Double Bed Upholstered (Bedroom and Living Room Furniture)",
+    "path": "/container-configurator/models/interior/bedroom-and-living-room-furniture/double-bed-upholster-4c7d1e0e.glb",
+    "source": "https://3dassets.dev/assets/bedroom-and-living-room-furniture-double-bed-upholster-4c7d1e0e",
+    "downloadUrl": "https://cdn.3dassets.dev/assets/38770/v1/model.glb",
+    "license": "CC0 1.0 Universal",
+    "aiGenerated": true,
+    "triangles": 1944,
+    "sizeMeters": [
+      1.71,
+      1.105,
+      2.19
+    ],
+    "fileSize": 81620
+  },
+  {
+    "title": "Bunk Bed Twin (Bedroom and Living Room Furniture)",
+    "path": "/container-configurator/models/interior/bedroom-and-living-room-furniture/bunk-bed-twin-1f611645.glb",
+    "source": "https://3dassets.dev/assets/bedroom-and-living-room-furniture-bunk-bed-twin-1f611645",
+    "downloadUrl": "https://cdn.3dassets.dev/assets/38772/v1/model.glb",
+    "license": "CC0 1.0 Universal",
+    "aiGenerated": true,
+    "triangles": 3456,
+    "sizeMeters": [
+      1,
+      1.675,
+      1.98
+    ],
+    "fileSize": 127300
+  },
+  {
+    "title": "Wardrobe 2 Door (Bedroom and Living Room Furniture)",
+    "path": "/container-configurator/models/interior/bedroom-and-living-room-furniture/wardrobe-2-door-de288b64.glb",
+    "source": "https://3dassets.dev/assets/bedroom-and-living-room-furniture-wardrobe-2-door-de288b64",
+    "downloadUrl": "https://cdn.3dassets.dev/assets/38805/v1/model.glb",
+    "license": "CC0 1.0 Universal",
+    "aiGenerated": true,
+    "triangles": 1040,
+    "sizeMeters": [
+      1.22,
+      2.025,
+      0.617
+    ],
+    "fileSize": 41188
+  },
+  {
+    "title": "Side Table Round (Bedroom and Living Room Furniture)",
+    "path": "/container-configurator/models/interior/bedroom-and-living-room-furniture/side-table-round-13533cb3.glb",
+    "source": "https://3dassets.dev/assets/bedroom-and-living-room-furniture-side-table-round-13533cb3",
+    "downloadUrl": "https://cdn.3dassets.dev/assets/38793/v1/model.glb",
+    "license": "CC0 1.0 Universal",
+    "aiGenerated": true,
+    "triangles": 448,
+    "sizeMeters": [
+      0.49,
+      0.6,
+      0.485
+    ],
+    "fileSize": 19264
+  },
+  {
+    "title": "Rug Wool Large (Bedroom and Living Room Furniture)",
+    "path": "/container-configurator/models/interior/bedroom-and-living-room-furniture/rug-wool-large-14b20ed0.glb",
+    "source": "https://3dassets.dev/assets/bedroom-and-living-room-furniture-rug-wool-large-14b20ed0",
+    "downloadUrl": "https://cdn.3dassets.dev/assets/38814/v1/model.glb",
+    "license": "CC0 1.0 Universal",
+    "aiGenerated": true,
+    "triangles": 1344,
+    "sizeMeters": [
+      2.3,
+      0.037,
+      1.78
+    ],
+    "fileSize": 56876
+  },
+  {
+    "title": "Floor Lamp Arc (Bedroom and Living Room Furniture)",
+    "path": "/container-configurator/models/interior/bedroom-and-living-room-furniture/floor-lamp-arc-7aa27d3a.glb",
+    "source": "https://3dassets.dev/assets/bedroom-and-living-room-furniture-floor-lamp-arc-7aa27d3a",
+    "downloadUrl": "https://cdn.3dassets.dev/assets/38797/v1/model.glb",
+    "license": "CC0 1.0 Universal",
+    "aiGenerated": true,
+    "triangles": 906,
+    "sizeMeters": [
+      0.347,
+      1.855,
+      0.868
+    ],
+    "fileSize": 39240
+  },
+  {
+    "title": "Side Table Square Drawer (Bedroom and Living Room Furniture)",
+    "path": "/container-configurator/models/interior/bedroom-and-living-room-furniture/side-table-square-dr-0e5df392.glb",
+    "source": "https://3dassets.dev/assets/bedroom-and-living-room-furniture-side-table-square-dr-0e5df392",
+    "downloadUrl": "https://cdn.3dassets.dev/assets/38794/v1/model.glb",
+    "license": "CC0 1.0 Universal",
+    "aiGenerated": true,
+    "triangles": 588,
+    "sizeMeters": [
+      0.45,
+      0.53,
+      0.42
+    ],
+    "fileSize": 29116
+  },
+  {
+    "title": "Kitchen base unit 600 (Fitted Kitchen and Bathroom Builder)",
+    "path": "/container-configurator/models/interior/fitted-kitchen-and-bathroom-builder/base-600-89129dae.glb",
+    "source": "https://3dassets.dev/assets/fitted-kitchen-and-bathroom-builder-base-600-89129dae",
+    "downloadUrl": "https://cdn.3dassets.dev/assets/17808/v1/model.glb",
+    "license": "CC0 1.0 Universal",
+    "aiGenerated": true,
+    "triangles": 768,
+    "sizeMeters": [
+      0.6,
+      0.9,
+      0.641
+    ],
+    "fileSize": 41696
+  },
+  {
+    "title": "Kitchen sink base unit 600 (Fitted Kitchen and Bathroom Builder)",
+    "path": "/container-configurator/models/interior/fitted-kitchen-and-bathroom-builder/base-600-sink-a65b92b5.glb",
+    "source": "https://3dassets.dev/assets/fitted-kitchen-and-bathroom-builder-base-600-sink-a65b92b5",
+    "downloadUrl": "https://cdn.3dassets.dev/assets/17806/v1/model.glb",
+    "license": "CC0 1.0 Universal",
+    "aiGenerated": true,
+    "triangles": 1948,
+    "sizeMeters": [
+      0.6,
+      0.901,
+      0.641
+    ],
+    "fileSize": 87756
+  },
+  {
+    "title": "Kitchen wall unit 600 (Fitted Kitchen and Bathroom Builder)",
+    "path": "/container-configurator/models/interior/fitted-kitchen-and-bathroom-builder/wall-600-8d2afd7f.glb",
+    "source": "https://3dassets.dev/assets/fitted-kitchen-and-bathroom-builder-wall-600-8d2afd7f",
+    "downloadUrl": "https://cdn.3dassets.dev/assets/17821/v1/model.glb",
+    "license": "CC0 1.0 Universal",
+    "aiGenerated": true,
+    "triangles": 616,
+    "sizeMeters": [
+      0.6,
+      0.72,
+      0.391
+    ],
+    "fileSize": 32952
+  },
+  {
+    "title": "Kitchen wall unit 600 in oak (Fitted Kitchen and Bathroom Builder)",
+    "path": "/container-configurator/models/interior/fitted-kitchen-and-bathroom-builder/wall-600-oak-13fc0944.glb",
+    "source": "https://3dassets.dev/assets/fitted-kitchen-and-bathroom-builder-wall-600-oak-13fc0944",
+    "downloadUrl": "https://cdn.3dassets.dev/assets/17929/v1/model.glb",
+    "license": "CC0 1.0 Universal",
+    "aiGenerated": true,
+    "triangles": 616,
+    "sizeMeters": [
+      0.6,
+      0.72,
+      0.391
+    ],
+    "fileSize": 32980
+  },
+  {
+    "title": "Kitchen tall larder unit 600 (Fitted Kitchen and Bathroom Builder)",
+    "path": "/container-configurator/models/interior/fitted-kitchen-and-bathroom-builder/tall-600-larder-b9ef44d8.glb",
+    "source": "https://3dassets.dev/assets/fitted-kitchen-and-bathroom-builder-tall-600-larder-b9ef44d8",
+    "downloadUrl": "https://cdn.3dassets.dev/assets/17831/v1/model.glb",
+    "license": "CC0 1.0 Universal",
+    "aiGenerated": true,
+    "triangles": 1128,
+    "sizeMeters": [
+      0.6,
+      2.22,
+      0.641
+    ],
+    "fileSize": 48364
+  },
+  {
+    "title": "Kitchen single oven housing 600 (Fitted Kitchen and Bathroom Builder)",
+    "path": "/container-configurator/models/interior/fitted-kitchen-and-bathroom-builder/tall-600-oven-hous-113c55f3.glb",
+    "source": "https://3dassets.dev/assets/fitted-kitchen-and-bathroom-builder-tall-600-oven-hous-113c55f3",
+    "downloadUrl": "https://cdn.3dassets.dev/assets/17833/v1/model.glb",
+    "license": "CC0 1.0 Universal",
+    "aiGenerated": true,
+    "triangles": 1296,
+    "sizeMeters": [
+      0.6,
+      2.22,
+      0.641
+    ],
+    "fileSize": 62776
+  },
+  {
+    "title": "Kitchen integrated fridge housing 600 (Fitted Kitchen and Bathroom Builder)",
+    "path": "/container-configurator/models/interior/fitted-kitchen-and-bathroom-builder/tall-600-fridge-ho-277ed65c.glb",
+    "source": "https://3dassets.dev/assets/fitted-kitchen-and-bathroom-builder-tall-600-fridge-ho-277ed65c",
+    "downloadUrl": "https://cdn.3dassets.dev/assets/17835/v1/model.glb",
+    "license": "CC0 1.0 Universal",
+    "aiGenerated": true,
+    "triangles": 1000,
+    "sizeMeters": [
+      0.6,
+      2.22,
+      0.641
+    ],
+    "fileSize": 52772
+  },
+  {
+    "title": "Kitchen worktop run 2 m (Fitted Kitchen and Bathroom Builder)",
+    "path": "/container-configurator/models/interior/fitted-kitchen-and-bathroom-builder/worktop-run-2m-9f1f4c44.glb",
+    "source": "https://3dassets.dev/assets/fitted-kitchen-and-bathroom-builder-worktop-run-2m-9f1f4c44",
+    "downloadUrl": "https://cdn.3dassets.dev/assets/17843/v1/model.glb",
+    "license": "CC0 1.0 Universal",
+    "aiGenerated": true,
+    "triangles": 64,
+    "sizeMeters": [
+      2,
+      0.03,
+      0.615
+    ],
+    "fileSize": 4076
+  },
+  {
+    "title": "Kitchen island with breakfast bar 1800 (Fitted Kitchen and Bathroom Builder)",
+    "path": "/container-configurator/models/interior/fitted-kitchen-and-bathroom-builder/island-breakfast-b-06cd323b.glb",
+    "source": "https://3dassets.dev/assets/fitted-kitchen-and-bathroom-builder-island-breakfast-b-06cd323b",
+    "downloadUrl": "https://cdn.3dassets.dev/assets/17855/v1/model.glb",
+    "license": "CC0 1.0 Universal",
+    "aiGenerated": true,
+    "triangles": 1672,
+    "sizeMeters": [
+      1.86,
+      0.91,
+      1.276
+    ],
+    "fileSize": 74556
+  },
+  {
+    "title": "Bathroom vanity unit 800 (Fitted Kitchen and Bathroom Builder)",
+    "path": "/container-configurator/models/interior/fitted-kitchen-and-bathroom-builder/vanity-800-24368157.glb",
+    "source": "https://3dassets.dev/assets/fitted-kitchen-and-bathroom-builder-vanity-800-24368157",
+    "downloadUrl": "https://cdn.3dassets.dev/assets/17884/v1/model.glb",
+    "license": "CC0 1.0 Universal",
+    "aiGenerated": true,
+    "triangles": 1516,
+    "sizeMeters": [
+      0.82,
+      0.828,
+      0.528
+    ],
+    "fileSize": 71128
+  },
+  {
+    "title": "Bathroom wall hung vanity 800 (Fitted Kitchen and Bathroom Builder)",
+    "path": "/container-configurator/models/interior/fitted-kitchen-and-bathroom-builder/vanity-wall-hung-23713a4a.glb",
+    "source": "https://3dassets.dev/assets/fitted-kitchen-and-bathroom-builder-vanity-wall-hung-23713a4a",
+    "downloadUrl": "https://cdn.3dassets.dev/assets/17886/v1/model.glb",
+    "license": "CC0 1.0 Universal",
+    "aiGenerated": true,
+    "triangles": 1556,
+    "sizeMeters": [
+      0.82,
+      0.528,
+      0.621
+    ],
+    "fileSize": 72356
+  },
+  {
+    "title": "Close coupled WC (Fitted Kitchen and Bathroom Builder)",
+    "path": "/container-configurator/models/interior/fitted-kitchen-and-bathroom-builder/wc-close-coupled-13e88a96.glb",
+    "source": "https://3dassets.dev/assets/fitted-kitchen-and-bathroom-builder-wc-close-coupled-13e88a96",
+    "downloadUrl": "https://cdn.3dassets.dev/assets/17870/v1/model.glb",
+    "license": "CC0 1.0 Universal",
+    "aiGenerated": true,
+    "triangles": 1920,
+    "sizeMeters": [
+      0.43,
+      0.824,
+      0.615
+    ],
+    "fileSize": 97852
+  },
+  {
+    "title": "Single ended bath 1700 (Fitted Kitchen and Bathroom Builder)",
+    "path": "/container-configurator/models/interior/fitted-kitchen-and-bathroom-builder/bath-single-ended-6160600e.glb",
+    "source": "https://3dassets.dev/assets/fitted-kitchen-and-bathroom-builder-bath-single-ended-6160600e",
+    "downloadUrl": "https://cdn.3dassets.dev/assets/17865/v1/model.glb",
+    "license": "CC0 1.0 Universal",
+    "aiGenerated": true,
+    "triangles": 680,
+    "sizeMeters": [
+      1.7,
+      0.55,
+      0.7
+    ],
+    "fileSize": 34432
+  },
+  {
+    "title": "Square shower enclosure 900 (Fitted Kitchen and Bathroom Builder)",
+    "path": "/container-configurator/models/interior/fitted-kitchen-and-bathroom-builder/shower-enclosure-s-b2c77076.glb",
+    "source": "https://3dassets.dev/assets/fitted-kitchen-and-bathroom-builder-shower-enclosure-s-b2c77076",
+    "downloadUrl": "https://cdn.3dassets.dev/assets/17894/v1/model.glb",
+    "license": "CC0 1.0 Universal",
+    "aiGenerated": true,
+    "triangles": 940,
+    "sizeMeters": [
+      0.9,
+      1.961,
+      0.9
+    ],
+    "fileSize": 49848
+  },
+  {
+    "title": "Square shower tray 900 (Fitted Kitchen and Bathroom Builder)",
+    "path": "/container-configurator/models/interior/fitted-kitchen-and-bathroom-builder/shower-tray-square-f1ac59e0.glb",
+    "source": "https://3dassets.dev/assets/fitted-kitchen-and-bathroom-builder-shower-tray-square-f1ac59e0",
+    "downloadUrl": "https://cdn.3dassets.dev/assets/17892/v1/model.glb",
+    "license": "CC0 1.0 Universal",
+    "aiGenerated": true,
+    "triangles": 476,
+    "sizeMeters": [
+      0.9,
+      0.05,
+      0.9
+    ],
+    "fileSize": 24632
+  },
+  {
+    "title": "Basin mixer tap (Fitted Kitchen and Bathroom Builder)",
+    "path": "/container-configurator/models/interior/fitted-kitchen-and-bathroom-builder/tap-basin-mixer-b37f7156.glb",
+    "source": "https://3dassets.dev/assets/fitted-kitchen-and-bathroom-builder-tap-basin-mixer-b37f7156",
+    "downloadUrl": "https://cdn.3dassets.dev/assets/17901/v1/model.glb",
+    "license": "CC0 1.0 Universal",
+    "aiGenerated": true,
+    "triangles": 284,
+    "sizeMeters": [
+      0.052,
+      0.179,
+      0.167
+    ],
+    "fileSize": 14704
+  },
+  {
+    "title": "Wall mounted shower valve (Fitted Kitchen and Bathroom Builder)",
+    "path": "/container-configurator/models/interior/fitted-kitchen-and-bathroom-builder/shower-valve-wall-4fee12c1.glb",
+    "source": "https://3dassets.dev/assets/fitted-kitchen-and-bathroom-builder-shower-valve-wall-4fee12c1",
+    "downloadUrl": "https://cdn.3dassets.dev/assets/17904/v1/model.glb",
+    "license": "CC0 1.0 Universal",
+    "aiGenerated": true,
+    "triangles": 320,
+    "sizeMeters": [
+      0.19,
+      0.19,
+      0.104
+    ],
+    "fileSize": 17192
+  },
+  {
+    "title": "Toilet roll holder (Fitted Kitchen and Bathroom Builder)",
+    "path": "/container-configurator/models/interior/fitted-kitchen-and-bathroom-builder/toilet-roll-holder-715719e9.glb",
+    "source": "https://3dassets.dev/assets/fitted-kitchen-and-bathroom-builder-toilet-roll-holder-715719e9",
+    "downloadUrl": "https://cdn.3dassets.dev/assets/17909/v1/model.glb",
+    "license": "CC0 1.0 Universal",
+    "aiGenerated": true,
+    "triangles": 300,
+    "sizeMeters": [
+      0.183,
+      0.11,
+      0.136
+    ],
+    "fileSize": 16952
+  },
+  {
+    "title": "Freestanding fridge freezer 600 (Home Appliances and Utility Room)",
+    "path": "/container-configurator/models/interior/home-appliances-and-utility/fridge-freezer-freestandin-c577bb9f.glb",
+    "source": "https://3dassets.dev/assets/home-appliances-and-utility-fridge-freezer-freestandin-c577bb9f",
+    "downloadUrl": "https://cdn.3dassets.dev/assets/14034/v1/model.glb",
+    "license": "CC0 1.0 Universal",
+    "aiGenerated": true,
+    "triangles": 1836,
+    "sizeMeters": [
+      0.603,
+      1.85,
+      0.765
+    ],
+    "fileSize": 87080
+  },
+  {
+    "title": "Built-in single oven 600 (Home Appliances and Utility Room)",
+    "path": "/container-configurator/models/interior/home-appliances-and-utility/oven-built-in-single-0f769521.glb",
+    "source": "https://3dassets.dev/assets/home-appliances-and-utility-oven-built-in-single-0f769521",
+    "downloadUrl": "https://cdn.3dassets.dev/assets/14075/v1/model.glb",
+    "license": "CC0 1.0 Universal",
+    "aiGenerated": true,
+    "triangles": 1708,
+    "sizeMeters": [
+      0.62,
+      0.641,
+      0.707
+    ],
+    "fileSize": 87588
+  },
+  {
+    "title": "Induction hob, four zone (Home Appliances and Utility Room)",
+    "path": "/container-configurator/models/interior/home-appliances-and-utility/hob-induction-4-zone-d09c4ddb.glb",
+    "source": "https://3dassets.dev/assets/home-appliances-and-utility-hob-induction-4-zone-d09c4ddb",
+    "downloadUrl": "https://cdn.3dassets.dev/assets/14081/v1/model.glb",
+    "license": "CC0 1.0 Universal",
+    "aiGenerated": true,
+    "triangles": 1696,
+    "sizeMeters": [
+      0.59,
+      0.18,
+      0.526
+    ],
+    "fileSize": 85432
+  },
+  {
+    "title": "Dishwasher 600 (Home Appliances and Utility Room)",
+    "path": "/container-configurator/models/interior/home-appliances-and-utility/dishwasher-600-9dbe9db1.glb",
+    "source": "https://3dassets.dev/assets/home-appliances-and-utility-dishwasher-600-9dbe9db1",
+    "downloadUrl": "https://cdn.3dassets.dev/assets/14103/v1/model.glb",
+    "license": "CC0 1.0 Universal",
+    "aiGenerated": true,
+    "triangles": 1450,
+    "sizeMeters": [
+      0.621,
+      0.82,
+      0.743
+    ],
+    "fileSize": 76252
+  }
+]

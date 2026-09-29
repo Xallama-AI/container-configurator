@@ -1,5 +1,6 @@
 import * as THREE from "three";
-import { LayoutItem } from "./layout";
+import { LayoutItem, catalogItem } from "./layout";
+import { StudioAssets } from "./assets";
 
 /** Lightweight built-ins shared by the plan and 3D studio. Dimensions are metres. */
 export function buildInterior(layout: LayoutItem[], floorY: number) {
@@ -111,4 +112,134 @@ export function buildInterior(layout: LayoutItem[], floorY: number) {
     }
   }
   return root;
+}
+
+/** Replace the lightweight plan placeholders with the bundled detailed models. */
+export async function upgradeInteriorAssets(
+  root: THREE.Group,
+  layout: LayoutItem[],
+  floorY: number,
+  assets: StudioAssets,
+  isCurrent: () => boolean,
+) {
+  const fit = async (
+    target: THREE.Group,
+    key: string,
+    x: number,
+    z: number,
+    width: number,
+    depth: number,
+    lift = 0,
+  ) => {
+    const model = await assets.interiorModel(key);
+    if (!isCurrent()) return;
+    model.visible = true;
+    model.traverse((object) => {
+      object.visible = true;
+      const mesh = object as THREE.Mesh;
+      if (!mesh.isMesh) return;
+      mesh.visible = true;
+      // Some of the source GLBs have stale/undersized bounding spheres. Rebuild
+      // both local bounds from their vertex buffers so Three does not cull them.
+      mesh.geometry.computeBoundingBox();
+      mesh.geometry.computeBoundingSphere();
+      mesh.frustumCulled = false;
+      mesh.renderOrder = 1;
+      const style = `${mesh.name} ${Array.isArray(mesh.material) ? mesh.material.map((m) => m.name).join(" ") : mesh.material.name}`.toLowerCase();
+      mesh.material = (Array.isArray(mesh.material) ? mesh.material : [mesh.material]).map((original) => {
+        const label = `${style} ${original.name}`.toLowerCase();
+        const material = original.clone() as THREE.MeshStandardMaterial;
+        material.transparent = false;
+        material.opacity = 1;
+        material.depthWrite = true;
+        material.side = THREE.DoubleSide;
+        if (/fabric|linen|uphol|cushion|textile|cloth/.test(label)) {
+          const realistic = assets.pbr("furniture/wool_boucle");
+          realistic.name = `${original.name}-boucle`;
+          return realistic;
+        }
+        if (/wood|walnut|oak|carcass|front|drawer|frame|seat/.test(label)) {
+          const realistic = assets.pbr("wood/natural-oak", "#ded4bc");
+          realistic.name = `${original.name}-oak`;
+          return realistic;
+        }
+        if (/metal|chrome|steel|brass|handle|tap|hinge/.test(label)) {
+          material.metalness = 0.78;
+          material.roughness = 0.28;
+        }
+        if (/ceramic|porcelain|basin|toilet|bath/.test(label)) material.roughness = 0.18;
+        return original;
+      });
+    });
+    model.updateMatrixWorld(true);
+    const bounds = new THREE.Box3().setFromObject(model);
+    const size = bounds.getSize(new THREE.Vector3());
+    const scale = Math.min(width / Math.max(size.x, 0.001), depth / Math.max(size.z, 0.001));
+    const placement = new THREE.Matrix4()
+      .makeTranslation(
+        x - ((bounds.min.x + bounds.max.x) / 2) * scale,
+        floorY + lift - bounds.min.y * scale,
+        z - ((bounds.min.z + bounds.max.z) / 2) * scale,
+      )
+      .multiply(new THREE.Matrix4().makeScale(scale, scale, scale));
+    const fitted = new THREE.Group();
+    fitted.name = `fitted-${key}`;
+    model.traverse((object) => {
+      const source = object as THREE.Mesh;
+      if (!source.isMesh) return;
+      const geometry = source.geometry.clone();
+      geometry.applyMatrix4(source.matrixWorld);
+      geometry.applyMatrix4(placement);
+      geometry.computeBoundingBox();
+      geometry.computeBoundingSphere();
+      const mesh = new THREE.Mesh(geometry, source.material);
+      mesh.name = source.name;
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      mesh.frustumCulled = false;
+      mesh.renderOrder = 1;
+      fitted.add(mesh);
+    });
+    target.add(fitted);
+  };
+
+  for (const item of layout) {
+    if (!isCurrent()) return;
+    const placeholder = root.getObjectByName(`${item.kind}-${item.id}`) as THREE.Group | undefined;
+    if (!placeholder?.parent) continue;
+    const replacement = new THREE.Group();
+    replacement.name = `detailed-${item.kind}-${item.id}`;
+    replacement.position.copy(placeholder.position);
+    replacement.rotation.copy(placeholder.rotation);
+    const size = catalogItem(item.kind);
+    try {
+      if (item.kind === "sofa") await fit(replacement, "sofa", 0, 0, size.width, size.depth);
+      else if (item.kind === "coffee-table") await fit(replacement, "coffeeTable", 0, 0, size.width, size.depth);
+      else if (item.kind === "dining-table") await fit(replacement, "diningTable", 0, 0, size.width, size.depth);
+      else if (item.kind === "chair") await fit(replacement, "chair", 0, 0, size.width, size.depth);
+      else if (item.kind === "bed") await fit(replacement, "bed", 0, 0, size.width, size.depth);
+      else if (item.kind === "desk") await fit(replacement, "desk", 0, 0, size.width, size.depth);
+      else if (item.kind === "storage") await fit(replacement, "storage", 0, 0, size.width, size.depth);
+      else if (item.kind === "kitchenette") {
+        await fit(replacement, "kitchenSink", -0.31, 0, 0.6, size.depth);
+        await fit(replacement, "kitchenBase", 0.31, 0, 0.6, size.depth);
+        await fit(replacement, "kitchenWall", 0.31, -0.03, 0.6, 0.34, 1.28);
+      } else if (item.kind === "bathroom") {
+        await fit(replacement, "vanity", -0.38, 0.65, 0.72, 0.47);
+        await fit(replacement, "toilet", -0.36, -0.46, 0.42, 0.58);
+        await fit(replacement, "showerTray", 0.39, -0.57, 0.71, 0.71);
+        await fit(replacement, "shower", 0.39, -0.57, 0.71, 0.71);
+      } else continue;
+      if (!isCurrent()) return;
+      if (replacement.children.length === 0) {
+        throw new Error(`No model meshes loaded for ${item.kind}`);
+      }
+      placeholder.visible = false;
+      placeholder.parent.add(replacement);
+    } catch (error) {
+      if (isCurrent()) {
+        console.warn(`Detailed ${item.kind} model failed to load; keeping the plan placeholder.`, error);
+      }
+    }
+  }
 }

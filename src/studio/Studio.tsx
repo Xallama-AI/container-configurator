@@ -13,10 +13,12 @@ import {
 import { isInteriorFocus } from "./camera";
 import "./studio.css";
 
+const DESIGN_STORAGE_KEY = "grid-logic-studio-design-v4";
+
 export default function Studio() {
   const [config, dispatch] = useReducer(configReducer, DEFAULT_CONFIG, (initial) => {
     try {
-      const saved = JSON.parse(localStorage.getItem("grid-logic-studio-design") || "null");
+      const saved = JSON.parse(localStorage.getItem(DESIGN_STORAGE_KEY) || "null");
       return saved && (saved.size === 20 || saved.size === 40) && Array.isArray(saved.layout)
         ? { ...initial, ...saved }
         : initial;
@@ -92,7 +94,7 @@ export default function Studio() {
         onRemoveLayoutItem={(id) => { updateLayout(config.layout.filter((item) => item.id !== id)); if (selectedItemId === id) setSelectedItemId(null); }}
         onSave={() => {
           localStorage.setItem(
-            "grid-logic-studio-design",
+            DESIGN_STORAGE_KEY,
             JSON.stringify(config),
           );
           const blob = new Blob(

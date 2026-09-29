@@ -1,6 +1,7 @@
 import React, { lazy, Suspense, useEffect, useRef, useState, useCallback } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js';
 import { 
   ContainerModelConfig, 
   SitePlanningConfig, 
@@ -70,6 +71,7 @@ import {
 } from './3d/FurnitureModels';
 import { buildLandscapingGreenery } from './3d/LandscapingGreenery';
 import { buildCompleteContainerHouse } from './3d/ContainerModelBuilder';
+import { upgradeInteriorFurniture } from './3d/InteriorAssetLibrary';
 import { buildArchitecturalModelFloor } from './3d/ArchitecturalSiteGround';
 import { soundFx } from '../utils/audio';
 
@@ -85,7 +87,7 @@ function disposeObjectResources(root: THREE.Object3D) {
       geometry?: THREE.BufferGeometry;
       material?: THREE.Material | THREE.Material[];
     };
-    if (resourceObject.geometry) geometries.add(resourceObject.geometry);
+    if (resourceObject.geometry && !resourceObject.userData.sharedAssetGeometry) geometries.add(resourceObject.geometry);
     if (Array.isArray(resourceObject.material)) resourceObject.material.forEach((material) => materials.add(material));
     else if (resourceObject.material) materials.add(resourceObject.material);
   });
@@ -743,8 +745,8 @@ export const ThreeContainerScene: React.FC<ThreeContainerSceneProps> = ({
 
     // Scene
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x06090e);
-    scene.fog = new THREE.FogExp2(0x06090e, 0.007);
+    scene.background = new THREE.Color(0xc5d0d0);
+    scene.fog = new THREE.FogExp2(0xc5d0d0, 0.003);
     sceneRef.current = scene;
 
     // Camera: 1 unit = 1 foot
@@ -752,7 +754,7 @@ export const ThreeContainerScene: React.FC<ThreeContainerSceneProps> = ({
     const height = container.clientHeight;
     const camera = new THREE.PerspectiveCamera(45, width / height, 0.5, 1000);
     // Initial architectural view looking at container
-    camera.position.set(38, 24, 45);
+    camera.position.set(34, 19, 40);
     camera.lookAt(0, 5, 0);
     cameraRef.current = camera;
 
@@ -765,11 +767,12 @@ export const ThreeContainerScene: React.FC<ThreeContainerSceneProps> = ({
     });
     renderer.setSize(width, height);
     const isCompactViewport = window.matchMedia('(max-width: 700px)').matches;
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, isCompactViewport ? 1 : 1.25));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, isCompactViewport ? 1.25 : 1.75));
     renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFShadowMap;
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.08;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.AgXToneMapping;
+    renderer.toneMappingExposure = 1.25;
     container.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
@@ -795,22 +798,36 @@ export const ThreeContainerScene: React.FC<ThreeContainerSceneProps> = ({
       // Fallback gracefully if PMREM is unavailable
     }
 
+    // Use the photographed HDR sky for physically based reflections and soft
+    // ambient light. Keep the generated map only while the asset is loading.
+    let sceneDisposed = false;
+    new RGBELoader().load('/container-configurator/environment/overcast-1k.hdr', (hdr) => {
+      if (sceneDisposed) { hdr.dispose(); return; }
+      const pmrem = new THREE.PMREMGenerator(renderer);
+      const environment = pmrem.fromEquirectangular(hdr).texture;
+      scene.environment?.dispose();
+      scene.environment = environment;
+      scene.environmentIntensity = 0.85;
+      hdr.dispose();
+      pmrem.dispose();
+    });
+
     // Dynamic Procedural Sky Atmosphere Dome (Day, Golden Hour, Twilight, Night)
     const skyDome = createDynamicSkyDome();
     scene.add(skyDome);
     skyDomeRef.current = skyDome;
 
     // Dual Hemisphere Sky Bounce Light for Realistic Outdoor Ambience
-    const hemiLight = new THREE.HemisphereLight(0xdbeafe, 0x1e293b, 0.85);
+    const hemiLight = new THREE.HemisphereLight(0xe7edf0, 0x6b756a, 1.05);
     scene.add(hemiLight);
     hemiLightRef.current = hemiLight;
 
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.55);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.28);
     scene.add(ambientLight);
 
     const sunLight = new THREE.DirectionalLight(0xfffaed, 2.4);
     sunLight.castShadow = true;
-    const shadowMapSize = window.innerWidth <= 700 ? 512 : 1024;
+    const shadowMapSize = window.innerWidth <= 700 ? 1024 : 2048;
     sunLight.shadow.mapSize.set(shadowMapSize, shadowMapSize);
     sunLight.shadow.camera.near = 1;
     sunLight.shadow.camera.far = 250;
@@ -1437,6 +1454,7 @@ export const ThreeContainerScene: React.FC<ThreeContainerSceneProps> = ({
     animate();
 
     return () => {
+      sceneDisposed = true;
       renderer.domElement.removeEventListener('pointerdown', handleCanvasPointerDown);
       renderer.domElement.removeEventListener('pointerup', handleCanvasPointerUp);
       renderer.domElement.removeEventListener('pointermove', handleCanvasPointerMove);
@@ -1491,10 +1509,14 @@ export const ThreeContainerScene: React.FC<ThreeContainerSceneProps> = ({
         hemiLightRef.current.groundColor.setHex(0x1e1b4b);
         hemiLightRef.current.intensity = 0.55;
       } else {
-        hemiLightRef.current.color.setHex(0xdbeafe);
-        hemiLightRef.current.groundColor.setHex(0x1e293b);
-        hemiLightRef.current.intensity = 0.85;
+        hemiLightRef.current.color.setHex(0xe7edf0);
+        hemiLightRef.current.groundColor.setHex(0x6b756a);
+        hemiLightRef.current.intensity = 1.05;
       }
+    }
+    const fog = sceneRef.current?.fog;
+    if (fog instanceof THREE.FogExp2) {
+      fog.color.setHex(hour >= 19 || hour <= 6 ? 0x111820 : hour >= 17 ? 0xa9a7a0 : 0xc5d0d0);
     }
   }, [siteConfig.timeOfDayHours, siteConfig.orientationCompassDeg]);
 
@@ -1506,13 +1528,13 @@ export const ThreeContainerScene: React.FC<ThreeContainerSceneProps> = ({
     if (!renderer || !scene || !sunLight) return;
 
     if (graphicsPreset === 'ultra') {
-      renderer.shadowMap.type = THREE.PCFShadowMap;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       sunLight.shadow.mapSize.width = 2048;
       sunLight.shadow.mapSize.height = 2048;
       sunLight.shadow.bias = -0.0004;
       sunLight.shadow.normalBias = 0.04;
     } else if (graphicsPreset === 'high') {
-      renderer.shadowMap.type = THREE.PCFShadowMap;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       sunLight.shadow.mapSize.width = 1024;
       sunLight.shadow.mapSize.height = 1024;
       sunLight.shadow.bias = -0.0005;
@@ -1600,6 +1622,8 @@ export const ThreeContainerScene: React.FC<ThreeContainerSceneProps> = ({
     // Build authentic container house model with operable doors/windows & efficient interiors
     const completeHouse = buildCompleteContainerHouse(modelConfig);
     containerGroup.add(completeHouse);
+    let cancelled = false;
+    void upgradeInteriorFurniture(completeHouse, modelConfig, () => cancelled);
 
     // Collect all animatable apertures (hinges, sliding tracks, awning windows)
     const apertures: AnimatableAperture[] = [];
@@ -1619,6 +1643,7 @@ export const ThreeContainerScene: React.FC<ThreeContainerSceneProps> = ({
     animatableAperturesRef.current = apertures;
     updateApertureTargetsFromConfig(modelConfig);
 
+    return () => { cancelled = true; };
   }, [modelConfig]);
 
   useEffect(() => {

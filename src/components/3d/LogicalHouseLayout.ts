@@ -295,6 +295,8 @@ function buildLoungeFurniture(
 ): THREE.Group {
   const group = new THREE.Group();
   group.name = `lounge-${type}`;
+  group.userData.interiorRoom = 'lounge';
+  group.userData.roomDepthFt = roomDepth;
 
   // Area Rug
   const rugW = Math.min(roomDepth - 1.0, 7.5);
@@ -654,6 +656,8 @@ function buildKitchenFurniture(
 ): THREE.Group {
   const group = new THREE.Group();
   group.name = `kitchen-${type}`;
+  group.userData.interiorRoom = 'kitchen';
+  group.userData.roomDepthFt = roomDepth;
   const halfD = roomDepth / 2;
 
   // 1. Full-Height Stainless Steel French Door Refrigerator Tower
@@ -902,6 +906,9 @@ function buildBathroomFurniture(
 ): THREE.Group {
   const group = new THREE.Group();
   group.name = `bathroom-${type}`;
+  group.userData.interiorRoom = 'bathroom';
+  group.userData.roomWidthFt = roomWidth;
+  group.userData.roomDepthFt = roomDepth;
 
   const halfW = roomWidth / 2;
   const halfD = roomDepth / 2;
@@ -1127,6 +1134,9 @@ function buildBedroomFurniture(
 ): THREE.Group {
   const group = new THREE.Group();
   group.name = `bedroom-${type}`;
+  group.userData.interiorRoom = 'bedroom';
+  group.userData.roomWidthFt = roomWidth;
+  group.userData.roomDepthFt = roomDepth;
 
   const halfW = roomWidth / 2;
   const halfD = roomDepth / 2;
@@ -2308,6 +2318,15 @@ export function buildArchitecturalHouseEnvelope(
     roofSlab.castShadow = true;
     roofSlab.receiveShadow = true;
     envelopeGroup.add(roofSlab);
+
+    // Fine standing seams give the roof a believable pressed-metal scale.
+    const roofSeamGeo = new THREE.BoxGeometry(roofW - 0.7, 0.045, 0.06);
+    for (let z = -roofD / 2 + 0.75; z < roofD / 2 - 0.5; z += 0.85) {
+      const seam = new THREE.Mesh(roofSeamGeo, fasciaMat);
+      seam.position.set(0, unitH + 0.38, z);
+      seam.castShadow = true;
+      envelopeGroup.add(seam);
+    }
 
     // B. Warm Timber Soffit Underhang Reveal
     const soffitGeo = new THREE.BoxGeometry(roofW - 0.1, 0.08, roofD - 0.1);

@@ -421,7 +421,7 @@ export function buildContainer(config: StudioConfig, assets: StudioAssets) {
         height: doorH,
         kind: config.doorStyle === "roll-up" ? "roll-up" : "door",
       });
-    addWall(
+    const sideWall = addWall(
       L - 0.18,
       H + B - F - 0.075,
       openings,
@@ -429,6 +429,8 @@ export function buildContainer(config: StudioConfig, assets: StudioAssets) {
       sign * (W / 2 - 0.018),
       side === "left" ? 0 : Math.PI,
     );
+    sideWall.name = `container-side-wall-${side}`;
+    sideWall.userData.cutawayWall = true;
   }
   const rearOpening: Opening[] = config.rearRollup
     ? [{ x: 0, y: F + 1.05, width: 1.9, height: 2.1, kind: "roll-up" }]
@@ -441,6 +443,8 @@ export function buildContainer(config: StudioConfig, assets: StudioAssets) {
     0,
     -Math.PI / 2,
   );
+  rear.name = "container-end-wall-rear";
+  rear.userData.cutawayWall = true;
   if (config.vents)
     for (const x of [-0.83, 0.83]) {
       box(rear, 0.32, 0.3, 0.065, x, H - 0.5, 0.05, chrome, true);
@@ -449,6 +453,8 @@ export function buildContainer(config: StudioConfig, assets: StudioAssets) {
     }
   // Original cargo doors: recessed corrugated leaves, weather seals, four locking bars.
   const cargo = new THREE.Group();
+  cargo.name = "container-end-wall-cargo";
+  cargo.userData.cutawayWall = true;
   cargo.position.set(L / 2 + 0.016, F, 0);
   cargo.rotation.y = Math.PI / 2;
   root.add(cargo);
@@ -597,9 +603,28 @@ export function buildContainer(config: StudioConfig, assets: StudioAssets) {
     batches.set(mesh.material, list);
   });
   const replaced = new Set<THREE.BufferGeometry>();
+  const belongsToInterior = (object: THREE.Object3D) => {
+    let parent: THREE.Object3D | null = object;
+    while (parent) {
+      if (parent.name === "Interior layout") return true;
+      parent = parent.parent;
+    }
+    return false;
+  };
+  const belongsToCutawayWall = (object: THREE.Object3D) => {
+    let parent: THREE.Object3D | null = object;
+    while (parent) {
+      if (parent.userData.cutawayWall) return true;
+      parent = parent.parent;
+    }
+    return false;
+  };
   batches.forEach((meshes, material) => {
-    if (meshes.length < 2) return;
-    const parts = meshes.map((mesh) => {
+    const batchMeshes = meshes.filter(
+      (mesh) => !belongsToInterior(mesh) && !belongsToCutawayWall(mesh),
+    );
+    if (batchMeshes.length < 2) return;
+    const parts = batchMeshes.map((mesh) => {
       const geometry = mesh.geometry.index
         ? mesh.geometry.toNonIndexed()
         : mesh.geometry.clone();
@@ -610,10 +635,10 @@ export function buildContainer(config: StudioConfig, assets: StudioAssets) {
     parts.forEach((part) => part.dispose());
     if (!merged) return;
     const combined = new THREE.Mesh(merged, material);
-    combined.castShadow = meshes.some((mesh) => mesh.castShadow);
-    combined.receiveShadow = meshes.some((mesh) => mesh.receiveShadow);
+    combined.castShadow = batchMeshes.some((mesh) => mesh.castShadow);
+    combined.receiveShadow = batchMeshes.some((mesh) => mesh.receiveShadow);
     root.add(combined);
-    meshes.forEach((mesh) => {
+    batchMeshes.forEach((mesh) => {
       replaced.add(mesh.geometry);
       mesh.removeFromParent();
     });

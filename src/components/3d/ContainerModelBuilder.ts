@@ -266,7 +266,9 @@ export function buildCompleteContainerHouse(modelConfig: ContainerModelConfig): 
     const normalMap = getContainerSteelNormalMap();
 
     const steelMat = new THREE.MeshStandardMaterial({
-      color: facadeColor,
+      // Albedo maps already contain their own pigment. Multiplying them by the
+      // finish colour made painted steel and timber almost black in daylight.
+      color: modelConfig.exteriorMaterial === 'shou-sugi-ban' ? 0x383838 : cladding.map ? 0xffffff : facadeColor,
       bumpScale: 0.03,
       normalScale: new THREE.Vector2(0.25, 0.25),
       roughness: facadeRoughness,
@@ -366,6 +368,19 @@ export function buildCompleteContainerHouse(modelConfig: ContainerModelConfig): 
       const wallGroup = new THREE.Group();
       const minX = -unitL / 2 + cornerSize;
       const maxX = unitL / 2 - cornerSize;
+      const ribProfile = new THREE.Shape();
+      const projection = isFront ? -0.13 : 0.13;
+      ribProfile.moveTo(-0.34, 0);
+      ribProfile.lineTo(-0.21, projection);
+      ribProfile.lineTo(0.21, projection);
+      ribProfile.lineTo(0.34, 0);
+      ribProfile.closePath();
+      const ribGeometry = new THREE.ExtrudeGeometry(ribProfile, {
+        depth: wallHeight,
+        bevelEnabled: false,
+        curveSegments: 1,
+      });
+      ribGeometry.rotateX(-Math.PI / 2);
 
       // Sort and merge overlapping cutout ranges
       const sortedCutouts = [...cutouts].sort((a, b) => a.xMin - b.xMin);
@@ -394,10 +409,9 @@ export function buildCompleteContainerHouse(modelConfig: ContainerModelConfig): 
           const ribOffset = (segW - ribCount * ribInterval) / 2 + ribInterval / 2;
           for (let r = 0; r < ribCount; r++) {
             const rx = currentX + ribOffset + r * ribInterval;
-            const ribGeo = new THREE.BoxGeometry(0.38, wallHeight, 0.1);
-            const ribMesh = new THREE.Mesh(ribGeo, steelMat);
+            const ribMesh = new THREE.Mesh(ribGeometry, steelMat);
             const zNudge = isFront ? 0.04 : -0.04;
-            ribMesh.position.set(rx, unitH / 2, wallZ + zNudge);
+            ribMesh.position.set(rx, unitH / 2 - wallHeight / 2, wallZ + zNudge);
             ribMesh.castShadow = true;
             wallGroup.add(ribMesh);
           }
@@ -447,10 +461,9 @@ export function buildCompleteContainerHouse(modelConfig: ContainerModelConfig): 
         const ribOffset = (segW - ribCount * ribInterval) / 2 + ribInterval / 2;
         for (let r = 0; r < ribCount; r++) {
           const rx = currentX + ribOffset + r * ribInterval;
-          const ribGeo = new THREE.BoxGeometry(0.38, wallHeight, 0.1);
-          const ribMesh = new THREE.Mesh(ribGeo, steelMat);
+          const ribMesh = new THREE.Mesh(ribGeometry, steelMat);
           const zNudge = isFront ? 0.04 : -0.04;
-          ribMesh.position.set(rx, unitH / 2, wallZ + zNudge);
+          ribMesh.position.set(rx, unitH / 2 - wallHeight / 2, wallZ + zNudge);
           ribMesh.castShadow = true;
           wallGroup.add(ribMesh);
         }

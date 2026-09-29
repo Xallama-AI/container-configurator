@@ -3,6 +3,22 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { HDRLoader } from "three/examples/jsm/loaders/HDRLoader.js";
 
 const BASE = "/container-configurator";
+const INTERIOR_MODELS: Record<string, string> = {
+  sofa: "bedroom-and-living-room-furniture/sofa-two-seat-904fa140.glb",
+  coffeeTable: "bedroom-and-living-room-furniture/dining-table-6seat-02f48ab1.glb",
+  diningTable: "bedroom-and-living-room-furniture/dining-table-6seat-02f48ab1.glb",
+  chair: "bedroom-and-living-room-furniture/dining-chair-upholst-7ec33345.glb",
+  bed: "bedroom-and-living-room-furniture/double-bed-upholster-4c7d1e0e.glb",
+  desk: "bedroom-and-living-room-furniture/desk-writing-2f6be817.glb",
+  storage: "bedroom-and-living-room-furniture/wardrobe-2-door-de288b64.glb",
+  kitchenBase: "fitted-kitchen-and-bathroom-builder/base-600-89129dae.glb",
+  kitchenSink: "fitted-kitchen-and-bathroom-builder/base-600-sink-a65b92b5.glb",
+  kitchenWall: "fitted-kitchen-and-bathroom-builder/wall-600-8d2afd7f.glb",
+  vanity: "fitted-kitchen-and-bathroom-builder/vanity-800-24368157.glb",
+  toilet: "fitted-kitchen-and-bathroom-builder/wc-close-coupled-13e88a96.glb",
+  shower: "fitted-kitchen-and-bathroom-builder/shower-enclosure-s-b2c77076.glb",
+  showerTray: "fitted-kitchen-and-bathroom-builder/shower-tray-square-f1ac59e0.glb",
+};
 function disposeModel(root: THREE.Group) {
   const textures = new Set<THREE.Texture>();
   root.traverse((object) => {
@@ -24,11 +40,11 @@ export function disposeTree(root: THREE.Object3D, includeShared = false) {
     materials = new Set<THREE.Material>();
   root.traverse((object) => {
     const mesh = object as THREE.Mesh;
-    if (!mesh.isMesh || (!includeShared && mesh.userData.sharedAsset)) return;
-    geometries.add(mesh.geometry);
-    (Array.isArray(mesh.material) ? mesh.material : [mesh.material]).forEach(
-      (m) => materials.add(m),
-    );
+    if (!mesh.isMesh) return;
+    if (includeShared || !mesh.userData.sharedAsset) geometries.add(mesh.geometry);
+    (Array.isArray(mesh.material) ? mesh.material : [mesh.material]).forEach((m) => {
+      if (!m.userData.sharedAssetMaterial) materials.add(m);
+    });
   });
   geometries.forEach((g) => g.dispose());
   materials.forEach((m) => m.dispose());
@@ -82,11 +98,12 @@ export class StudioAssets {
     return texture;
   }
   pbr(folder: string, color = "#ffffff") {
-    const arm = this.texture(`/textures/${folder}/arm.webp`);
+    const prefix = folder === "furniture/wool_boucle" ? "wool_boucle-" : "";
+    const arm = this.texture(`/textures/${folder}/${prefix}arm.webp`);
     return new THREE.MeshStandardMaterial({
       color,
-      map: this.texture(`/textures/${folder}/color.webp`, true),
-      normalMap: this.texture(`/textures/${folder}/normal.webp`),
+      map: this.texture(`/textures/${folder}/${prefix}color.webp`, true),
+      normalMap: this.texture(`/textures/${folder}/${prefix}normal.webp`),
       normalScale: new THREE.Vector2(0.35, 0.35),
       roughnessMap: arm,
       aoMap: arm,
@@ -130,10 +147,40 @@ export class StudioAssets {
     root.traverse((object) => {
       const mesh = object as THREE.Mesh;
       if (mesh.isMesh) {
+        mesh.material = Array.isArray(mesh.material)
+          ? mesh.material.map((material) => material.clone())
+          : mesh.material.clone();
         mesh.castShadow = true;
         mesh.receiveShadow = true;
         mesh.userData.sharedAsset = true;
       }
+    });
+    return root;
+  }
+  async interiorModel(key: string) {
+    const path = INTERIOR_MODELS[key];
+    if (!path) throw new Error(`Unknown interior model: ${key}`);
+    if (!this.models.has(`interior:${key}`)) {
+      this.models.set(`interior:${key}`, new GLTFLoader().loadAsync(`${BASE}/models/interior/${path}`).then((gltf) => {
+        const root = gltf.scene;
+        if (this.disposed) {
+          disposeModel(root);
+          throw new Error("Scene closed");
+        }
+        this.loadedModels.push(root);
+        return root;
+      }));
+    }
+    const root = (await this.models.get(`interior:${key}`)!).clone(true);
+    root.traverse((object) => {
+      const mesh = object as THREE.Mesh;
+      if (!mesh.isMesh) return;
+      mesh.material = Array.isArray(mesh.material)
+        ? mesh.material.map((material) => material.clone())
+        : mesh.material.clone();
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      mesh.userData.sharedAsset = true;
     });
     return root;
   }
