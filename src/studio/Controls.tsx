@@ -98,6 +98,8 @@ export default function Controls({ config, onChange, onFocus, onSave, onOpenPlan
     label: string,
     key:
       | "cargoOpen"
+      | "sideDoorOpen"
+      | "rearRollupOpen"
       | "cutaway"
       | "rearRollup"
       | "ac"
@@ -211,6 +213,11 @@ export default function Controls({ config, onChange, onFocus, onSave, onOpenPlan
                         () => onChange({ size: 40 }, "exterior"),
                         "12.19 m · generous space",
                       )}
+                    </div>
+                    <p className="studio-label">Number of containers</p>
+                    <div className="studio-two">
+                      {choice("Single container", config.containers === 1, () => onChange({ containers: 1 }, "exterior"), "One 2.44 m wide shell")}
+                      {choice("Double container", config.containers === 2, () => onChange({ containers: 2 }, "exterior"), "Two joined shells · 4.88 m wide")}
                     </div>
                     <p className="studio-label">Height</p>
                     <div className="studio-two">
@@ -371,6 +378,8 @@ export default function Controls({ config, onChange, onFocus, onSave, onOpenPlan
                       "front",
                       "Twin doors with locking bars & hinges",
                     )}
+                    {config.doorStyle !== "none" && toggle("Open added door", "sideDoorOpen", openingFocus("door", config.doorSide), "Click the door in 3D to open or close it")}
+                    {config.rearRollup && toggle("Open rear shutter", "rearRollupOpen", "rear", "Raise the rear roll-up door")}
                   </>
                 )}
                 {category.id === "interior" && (

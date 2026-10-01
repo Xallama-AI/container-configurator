@@ -131,7 +131,7 @@ export function buildContainer(config: StudioConfig, assets: StudioAssets) {
   });
   castingGeometry.translate(0, 0, -0.081);
   for (const x of [-L / 2 + 0.05, L / 2 - 0.05])
-    for (const z of [-W / 2 + 0.035, W / 2 - 0.035]) {
+    for (const z of config.containers === 2 ? [-W / 2 + 0.035, 0, W / 2 - 0.035] : [-W / 2 + 0.035, W / 2 - 0.035]) {
       box(root, 0.14, H - 0.1, 0.13, x, B + H / 2, z, paint, true);
       for (const y of [B + 0.045, B + H - 0.04]) {
         const cast = new THREE.Mesh(castingGeometry, paint);
@@ -151,7 +151,7 @@ export function buildContainer(config: StudioConfig, assets: StudioAssets) {
         true,
       );
     }
-  for (const z of [-W / 2, W / 2]) {
+  for (const z of config.containers === 2 ? [-W / 2, 0, W / 2] : [-W / 2, W / 2]) {
     box(root, L - 0.18, 0.15, 0.1, 0, B + 0.08, z, paint, true);
     box(root, L - 0.18, 0.11, 0.11, 0, B + H - 0.045, z, paint, true);
   }
@@ -169,6 +169,8 @@ export function buildContainer(config: StudioConfig, assets: StudioAssets) {
   floor.position.y = F + 0.003;
   floor.receiveShadow = true;
   root.add(floor);
+  if (config.containers === 2)
+    box(root, L - 0.22, 0.008, 0.025, 0, F + 0.011, 0, chrome);
   const window = WINDOWS.find((w) => w.id === config.windowStyle)!;
   const windowW = Math.min(window.w, L * 0.32),
     windowH = Math.min(window.h, H - 0.42);
@@ -198,10 +200,13 @@ export function buildContainer(config: StudioConfig, assets: StudioAssets) {
     for (const y of [o.y - o.height / 2 + 0.015, o.y + o.height / 2 - 0.015])
       box(wall, o.width, 0.02, 0.085, o.x, y, -0.017, white);
   };
-  const shutter = (wall: THREE.Group, o: Opening) => {
+  const shutter = (wall: THREE.Group, o: Opening, action?: "side" | "rear") => {
     frameOpening(wall, o, chrome, 0.065);
+    const moving = new THREE.Group();
+    if (action) moving.userData.doorAction = action;
+    wall.add(moving);
     box(
-      wall,
+      moving,
       o.width + 0.16,
       0.19,
       0.22,
@@ -211,6 +216,7 @@ export function buildContainer(config: StudioConfig, assets: StudioAssets) {
       white,
       true,
     );
+    const open = action === "side" ? config.sideDoorOpen : config.rearRollupOpen;
     const count = Math.ceil(o.height / 0.065),
       geometry = new THREE.BoxGeometry(
         o.width - 0.055,
@@ -222,15 +228,15 @@ export function buildContainer(config: StudioConfig, assets: StudioAssets) {
     for (let i = 0; i < count; i++) {
       matrix.makeTranslation(
         o.x,
-        o.y - o.height / 2 + ((i + 0.5) * o.height) / count,
+        open ? o.y + o.height / 2 - 0.13 + (i % 4) * 0.008 : o.y - o.height / 2 + ((i + 0.5) * o.height) / count,
         0.033,
       );
       slats.setMatrixAt(i, matrix);
     }
     slats.castShadow = true;
     slats.receiveShadow = true;
-    wall.add(slats);
-    box(wall, 0.19, 0.025, 0.055, o.x, o.y - o.height / 2 + 0.2, 0.06, frame);
+    moving.add(slats);
+    if (!open) box(moving, 0.19, 0.025, 0.055, o.x, o.y - o.height / 2 + 0.2, 0.06, frame);
   };
   const liningMaterial = () => {
     if (config.walls === "steel") return paint;
@@ -256,6 +262,7 @@ export function buildContainer(config: StudioConfig, assets: StudioAssets) {
     x: number,
     z: number,
     rotation: number,
+    doorAction?: "side" | "rear",
   ) => {
     const wall = new THREE.Group();
     wall.position.set(x, F, z);
@@ -310,11 +317,14 @@ export function buildContainer(config: StudioConfig, assets: StudioAssets) {
     }
     for (const o of translated) {
       if (o.kind === "roll-up") {
-        shutter(wall, o);
+        shutter(wall, o, doorAction);
         continue;
       }
       const vinyl = o.kind === "door" && config.doorStyle === "vinyl";
       frameOpening(wall, o, vinyl ? white : frame);
+      const moving = new THREE.Group();
+      if (o.kind === "door" && doorAction) moving.userData.doorAction = doorAction;
+      wall.add(moving);
       if (o.kind === "window" || config.doorStyle === "sliding" || vinyl) {
         const panes =
           o.kind === "window"
@@ -322,32 +332,32 @@ export function buildContainer(config: StudioConfig, assets: StudioAssets) {
               ? 1
               : 2
             : 2;
+        const paneW = (o.width - 0.06) / panes;
         for (let i = 0; i < panes; i++) {
-          const paneW = (o.width - 0.06) / panes;
           box(
-            wall,
+            moving,
             paneW - 0.025,
             o.height - 0.065,
             0.012,
-            o.x - o.width / 2 + 0.03 + paneW * (i + 0.5),
+            o.x - o.width / 2 + 0.03 + paneW * (i + 0.5) + (o.kind === "door" && config.sideDoorOpen && i === 1 ? -paneW : 0),
             o.y,
             i % 2 === 0 ? 0.021 : -0.003,
             glass,
           ).castShadow = false;
           if (i > 0)
             box(
-              wall,
+              moving,
               0.028,
               o.height - 0.04,
               0.065,
-              o.x - o.width / 2 + 0.03 + paneW * i,
+              o.x - o.width / 2 + 0.03 + paneW * i + (o.kind === "door" && config.sideDoorOpen ? -paneW : 0),
               o.y,
               0.027,
               vinyl ? white : frame,
             );
         }
         if (o.kind === "door") {
-          box(wall, 0.022, 0.21, 0.025, o.x + 0.05, o.y - 0.12, 0.073, frame);
+          box(moving, 0.022, 0.21, 0.025, o.x + 0.05 + (config.sideDoorOpen ? -paneW : 0), o.y - 0.12, 0.073, frame);
           for (const delta of [-0.02, 0.02])
             box(
               wall,
@@ -361,23 +371,27 @@ export function buildContainer(config: StudioConfig, assets: StudioAssets) {
             );
         }
       } else {
+        const hinge = new THREE.Group();
+        hinge.position.x = o.x - o.width / 2 + 0.03;
+        hinge.rotation.y = config.sideDoorOpen ? -Math.PI * 0.55 : 0;
+        moving.add(hinge);
         box(
-          wall,
+          hinge,
           o.width - 0.06,
           o.height - 0.06,
           0.048,
-          o.x,
+          (o.width - 0.06) / 2,
           o.y,
           0.027,
           white,
           true,
         );
         box(
-          wall,
+          hinge,
           0.016,
           0.105,
           0.035,
-          o.x + o.width / 2 - 0.13,
+          o.width - 0.16,
           o.y - 0.08,
           0.073,
           chrome,
@@ -385,11 +399,11 @@ export function buildContainer(config: StudioConfig, assets: StudioAssets) {
         );
         for (const y of [o.y - o.height * 0.32, o.y + o.height * 0.32])
           box(
-            wall,
+            hinge,
             0.025,
             0.1,
             0.07,
-            o.x - o.width / 2 + 0.016,
+            0.016,
             y,
             0.04,
             chrome,
@@ -428,6 +442,7 @@ export function buildContainer(config: StudioConfig, assets: StudioAssets) {
       0,
       sign * (W / 2 - 0.018),
       side === "left" ? 0 : Math.PI,
+      "side",
     );
     sideWall.name = `container-side-wall-${side}`;
     sideWall.userData.cutawayWall = true;
@@ -442,6 +457,7 @@ export function buildContainer(config: StudioConfig, assets: StudioAssets) {
     -L / 2 + 0.02,
     0,
     -Math.PI / 2,
+    "rear",
   );
   rear.name = "container-end-wall-rear";
   rear.userData.cutawayWall = true;
@@ -455,14 +471,17 @@ export function buildContainer(config: StudioConfig, assets: StudioAssets) {
   const cargo = new THREE.Group();
   cargo.name = "container-end-wall-cargo";
   cargo.userData.cutawayWall = true;
+  cargo.userData.doorAction = "cargo";
   cargo.position.set(L / 2 + 0.016, F, 0);
   cargo.rotation.y = Math.PI / 2;
   root.add(cargo);
-  const leafWidth = (W - 0.23) / 2,
+  const bayWidth = 2.438;
+  const leafWidth = (bayWidth - 0.23) / 2,
     leafHeight = H + B - F - 0.12;
+  for (const bay of config.containers === 2 ? [-bayWidth / 2, bayWidth / 2] : [0])
   for (const sign of [-1, 1]) {
     const hinge = new THREE.Group();
-    hinge.position.x = sign * (W / 2 - 0.115);
+    hinge.position.x = bay + sign * (bayWidth / 2 - 0.115);
     hinge.rotation.y = config.cargoOpen ? sign * Math.PI * 0.63 : 0;
     cargo.add(hinge);
     const center = (-sign * leafWidth) / 2;

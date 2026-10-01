@@ -26,6 +26,6 @@ export default function LayoutControls({ layout, selectedId, notice, onPreset, o
     <p className="layout-control-notice" role="status">{notice}</p>
     <p className="studio-label">Placed items · {layout.length}</p>
     <div className="layout-placed">{layout.length ? layout.map((item) => <div key={item.id} className={item.id === selectedId ? "selected" : ""}><button type="button" onClick={() => onSelect(item.id)}>{catalogItem(item.kind).label}<small>{item.x.toFixed(1)} m · {item.z.toFixed(1)} m</small></button><button type="button" aria-label={`Remove ${catalogItem(item.kind).label}`} onClick={() => onRemove(item.id)}><Trash2 size={14}/></button></div>) : <p>The floor is clear. Add a piece above.</p>}</div>
-    <p className="studio-note">Drag items in the plan, use arrow keys for 10 cm moves, and press R to rotate. Placements snap to the grid and stay within the container.</p>
+    <p className="studio-note">Drag freely over other pieces. On release, furniture settles into the nearest clear floor space. Arrow keys move by 10 cm; R rotates.</p>
   </div>;
 }

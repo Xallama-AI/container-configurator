@@ -74,9 +74,9 @@ export class StudioCamera {
         interior: false,
       },
       layout: {
-        position: V(L * 0.16, H + Math.max(7.3, L * 1.1) * fit, Math.max(4.4, L * 0.55) * fit),
+        position: V(0, H + Math.max(9, L * 1.55) * fit, Math.max(1.2, L * 0.1) * fit),
         target: V(0, F, 0),
-        fov: 47,
+        fov: 42,
         interior: false,
       },
       front: {

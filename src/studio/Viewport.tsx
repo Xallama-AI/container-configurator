@@ -7,23 +7,29 @@ import {
 } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import { ArrowDownToLine, LayoutGrid, RotateCcw } from "lucide-react";
+import { ArrowDownToLine, Box, LayoutGrid, Move, RotateCcw, RotateCw, Trash2, X } from "lucide-react";
 import { CameraFocus, CameraRequest, dimensions, StudioConfig } from "./config";
+import { catalogItem, entryClearance, LayoutItem, nearestFreePlacement } from "./layout";
 import { disposeTree, StudioAssets } from "./assets";
 import { physicalPlane } from "./geometry";
 import { buildContainer } from "./model";
 import { StudioCamera } from "./camera";
+import { upgradeInteriorAssets } from "./interior";
 export interface ViewerHandle {
   snapshot: () => void;
 }
 interface Props {
   config: StudioConfig;
   request: CameraRequest;
+  selectedId: string | null;
+  onSelect: (id: string | null) => void;
+  onLayoutChange: (layout: LayoutItem[]) => void;
   onFocus: (focus: CameraFocus) => void;
   onOpenPlan: () => void;
+  onToggleDoor: (door: "cargo" | "side" | "rear") => void;
 }
 export default forwardRef<ViewerHandle, Props>(function Viewport(
-  { config, request, onFocus, onOpenPlan },
+  { config, request, selectedId, onSelect, onLayoutChange, onFocus, onOpenPlan, onToggleDoor },
   ref,
 ) {
   const mount = useRef<HTMLDivElement>(null),
@@ -35,8 +41,23 @@ export default forwardRef<ViewerHandle, Props>(function Viewport(
     assetsRef = useRef<StudioAssets | null>(null),
     invalidateRef = useRef(() => {}),
     previousConfig = useRef<StudioConfig | null>(null),
+    environmentReady = useRef<Promise<void>>(Promise.resolve()),
+    configRef = useRef(config),
+    selectedRef = useRef(selectedId),
+    selectRef = useRef(onSelect),
+    layoutChangeRef = useRef(onLayoutChange),
+    toggleDoorRef = useRef(onToggleDoor),
+    sceneReadyRef = useRef(false),
+    selectionHelperRef = useRef<THREE.BoxHelper | null>(null),
+    refreshSelectionRef = useRef(() => {}),
     epoch = useRef(0);
-  const [notice, setNotice] = useState("Preparing materials…");
+  const [sceneStatus, setSceneStatus] = useState({ ready: false, message: "Preparing 3D scene…", error: false });
+  const [editNotice, setEditNotice] = useState("Select a furniture piece, then drag it to move.");
+  configRef.current = config;
+  selectedRef.current = selectedId;
+  selectRef.current = onSelect;
+  layoutChangeRef.current = onLayoutChange;
+  toggleDoorRef.current = onToggleDoor;
   useImperativeHandle(
     ref,
     () => ({
@@ -88,7 +109,7 @@ export default forwardRef<ViewerHandle, Props>(function Viewport(
     controls.dampingFactor = 0.08;
     controls.target.set(0, 1.3, 0);
     const system = new StudioCamera(camera, controls, config);
-    system.go("exterior", config, true);
+    system.go(request.focus, config, true);
     const invalidate = () => {
       if (!disposed && !raf) raf = requestAnimationFrame(render);
     };
@@ -108,7 +129,10 @@ export default forwardRef<ViewerHandle, Props>(function Viewport(
       }
       if (moving || damping) invalidate();
     }
-    const assets = new StudioAssets(invalidate, setNotice);
+    const assets = new StudioAssets(invalidate, (message) => {
+      sceneReadyRef.current = false;
+      setSceneStatus({ ready: false, message, error: true });
+    });
     assetsRef.current = assets;
     scene.add(new THREE.HemisphereLight("#ecf3f2", "#77775e", 0.9));
     const sunlight = new THREE.DirectionalLight("#fff7e7", 2.1);
@@ -140,7 +164,7 @@ export default forwardRef<ViewerHandle, Props>(function Viewport(
     cameraRef.current = camera;
     systemRef.current = system;
     invalidateRef.current = invalidate;
-    assets
+    environmentReady.current = assets
       .environment(renderer)
       .then((texture) => {
         if (disposed) {
@@ -151,15 +175,160 @@ export default forwardRef<ViewerHandle, Props>(function Viewport(
         scene.environment = texture;
         scene.environmentIntensity = 0.45;
         renderer.shadowMap.needsUpdate = true;
-        setNotice("");
         invalidate();
       })
       .catch(() => {
-        if (!disposed) {
-          setNotice("Environment unavailable. Daylight lighting is active.");
-          invalidate();
-        }
+        if (!disposed) invalidate();
       });
+    const canvas = renderer.domElement;
+    canvas.tabIndex = 0;
+    const raycaster = new THREE.Raycaster();
+    const pointer = new THREE.Vector2();
+    const floorPoint = new THREE.Vector3();
+    let drag: { id: string; pointerId: number; offsetX: number; offsetZ: number; x: number; z: number } | null = null;
+    const setRay = (event: PointerEvent) => {
+      const bounds = canvas.getBoundingClientRect();
+      pointer.set(
+        ((event.clientX - bounds.left) / bounds.width) * 2 - 1,
+        -((event.clientY - bounds.top) / bounds.height) * 2 + 1,
+      );
+      raycaster.setFromCamera(pointer, camera);
+    };
+    const floorIntersection = (event: PointerEvent) => {
+      setRay(event);
+      const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -dimensions(configRef.current).floor);
+      return raycaster.ray.intersectPlane(plane, floorPoint);
+    };
+    const activeGroup = (id: string) => {
+      const interior = modelRef.current?.getObjectByName("Interior layout") as THREE.Group | undefined;
+      return interior?.children.find((child) => child.visible && child.userData.layoutItemId === id);
+    };
+    const clearSelectionBox = () => {
+      const helper = selectionHelperRef.current;
+      if (!helper) return;
+      scene.remove(helper);
+      helper.geometry.dispose();
+      (helper.material as THREE.Material).dispose();
+      selectionHelperRef.current = null;
+    };
+    const refreshSelectionBox = () => {
+      clearSelectionBox();
+      const group = selectedRef.current && activeGroup(selectedRef.current);
+      if (!group) return;
+      const helper = new THREE.BoxHelper(group, 0x111916);
+      helper.material.depthTest = false;
+      helper.renderOrder = 100;
+      scene.add(helper);
+      selectionHelperRef.current = helper;
+      invalidate();
+    };
+    refreshSelectionRef.current = refreshSelectionBox;
+    const hitItem = (event: PointerEvent) => {
+      const interior = modelRef.current?.getObjectByName("Interior layout") as THREE.Group | undefined;
+      if (!interior) return null;
+      setRay(event);
+      const hits = raycaster.intersectObjects(interior.children.filter((child) => child.visible), true);
+      for (const hit of hits) {
+        let node: THREE.Object3D | null = hit.object;
+        while (node && node !== interior) {
+          if (node.userData.layoutItemId) return String(node.userData.layoutItemId);
+          node = node.parent;
+        }
+      }
+      return null;
+    };
+    const hitDoor = (event: PointerEvent): "cargo" | "side" | "rear" | null => {
+      const model = modelRef.current;
+      if (!model) return null;
+      setRay(event);
+      const hits = raycaster.intersectObject(model, true);
+      for (const hit of hits) {
+        let node: THREE.Object3D | null = hit.object;
+        while (node && node !== model) {
+          if (node.userData.doorAction) return node.userData.doorAction as "cargo" | "side" | "rear";
+          node = node.parent;
+        }
+        // An opaque shell surface in front of a door should block the click.
+        if ((hit.object as THREE.Mesh).material) break;
+      }
+      return null;
+    };
+    const pointerDown = (event: PointerEvent) => {
+      if (event.button !== 0 || !sceneReadyRef.current) return;
+      const id = hitItem(event);
+      if (!id) {
+        const door = hitDoor(event);
+        if (door) {
+          toggleDoorRef.current(door);
+          setEditNotice(`${door === "cargo" ? "Cargo doors" : door === "rear" ? "Rear shutter" : "Side door"} toggled.`);
+          event.preventDefault();
+          return;
+        }
+      }
+      selectedRef.current = id;
+      selectRef.current(id);
+      refreshSelectionBox();
+      if (!id) return;
+      const item = configRef.current.layout.find((entry) => entry.id === id);
+      const point = floorIntersection(event);
+      if (!item || !point) return;
+      drag = { id, pointerId: event.pointerId, offsetX: item.x - point.x, offsetZ: item.z - point.z, x: item.x, z: item.z };
+      controls.enabled = false;
+      canvas.setPointerCapture(event.pointerId);
+      canvas.style.cursor = "grabbing";
+      canvas.focus();
+      event.preventDefault();
+    };
+    const pointerMove = (event: PointerEvent) => {
+      if (!drag || drag.pointerId !== event.pointerId) {
+        canvas.style.cursor = sceneReadyRef.current && hitItem(event) ? "grab" : sceneReadyRef.current && hitDoor(event) ? "pointer" : "auto";
+        return;
+      }
+      const point = floorIntersection(event);
+      if (!point) return;
+      const group = activeGroup(drag.id);
+      if (!group) return;
+      drag.x = point.x + drag.offsetX;
+      drag.z = point.z + drag.offsetZ;
+      group.position.set(drag.x, 0.08, drag.z);
+      selectionHelperRef.current?.update();
+      invalidate();
+    };
+    const endDrag = (event: PointerEvent) => {
+      if (!drag || drag.pointerId !== event.pointerId) return;
+      if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
+      controls.enabled = true;
+      canvas.style.cursor = "auto";
+      const placed = drag;
+      drag = null;
+      const current = configRef.current.layout;
+      const item = current.find((entry) => entry.id === placed.id);
+      if (!item) return;
+      const configNow = configRef.current;
+      const bounds = dimensions(configNow);
+      const next = event.type === "pointercancel" ? null : nearestFreePlacement({ ...item, x: placed.x, z: placed.z, onTopOf: undefined }, current, bounds.length, entryClearance(configNow.doorStyle, configNow.doorSide, bounds.length, bounds.width), bounds.width);
+      if (!next) {
+        activeGroup(item.id)?.position.set(item.x, 0, item.z);
+        selectionHelperRef.current?.update();
+        invalidate();
+        if (event.type !== "pointercancel") setEditNotice("No clear floor space is available. The item stayed where it was.");
+        return;
+      }
+      if (item.x === next.x && item.z === next.z && !item.onTopOf) {
+        activeGroup(item.id)?.position.set(item.x, 0, item.z);
+        selectionHelperRef.current?.update();
+        invalidate();
+        if (Math.abs(placed.x - item.x) > 0.05 || Math.abs(placed.z - item.z) > 0.05) setEditNotice(`${catalogItem(item.kind).label} returned to the nearest clear floor space.`);
+        return;
+      }
+      layoutChangeRef.current(current.map((entry) => entry.id === placed.id ? next : entry));
+      const corrected = Math.abs(next.x - placed.x) > 0.051 || Math.abs(next.z - placed.z) > 0.051;
+      setEditNotice(`${catalogItem(item.kind).label} ${corrected ? "settled in the nearest clear space" : "placed"} at ${next.x.toFixed(1)} × ${next.z.toFixed(1)} m.`);
+    };
+    canvas.addEventListener("pointerdown", pointerDown);
+    canvas.addEventListener("pointermove", pointerMove);
+    canvas.addEventListener("pointerup", endDrag);
+    canvas.addEventListener("pointercancel", endDrag);
     const observer = new ResizeObserver(() => {
       if (disposed) return;
       const w = element.clientWidth,
@@ -189,6 +358,12 @@ export default forwardRef<ViewerHandle, Props>(function Viewport(
       epoch.current++;
       cancelAnimationFrame(raf);
       observer.disconnect();
+      canvas.removeEventListener("pointerdown", pointerDown);
+      canvas.removeEventListener("pointermove", pointerMove);
+      canvas.removeEventListener("pointerup", endDrag);
+      canvas.removeEventListener("pointercancel", endDrag);
+      clearSelectionBox();
+      refreshSelectionRef.current = () => {};
       document.removeEventListener("visibilitychange", visibility);
       controls.removeEventListener("change", invalidate);
       controls.removeEventListener("start", start);
@@ -214,7 +389,6 @@ export default forwardRef<ViewerHandle, Props>(function Viewport(
     if (!scene || !assets || !renderer) return;
     const prev = previousConfig.current;
     previousConfig.current = config;
-    if (prev?.ac && !config.ac) setNotice("");
     if (
       prev &&
       modelRef.current &&
@@ -234,15 +408,31 @@ export default forwardRef<ViewerHandle, Props>(function Viewport(
       scene.remove(modelRef.current);
       disposeTree(modelRef.current);
     }
+    sceneReadyRef.current = false;
+    setSceneStatus({ ready: false, message: "Loading models and materials…", error: false });
     const model = buildContainer(config, assets);
     modelRef.current = model;
     scene.add(model);
     renderer.shadowMap.needsUpdate = true;
     invalidateRef.current();
     const currentEpoch = ++epoch.current;
-    if (config.ac) {
-      setNotice("Loading climate equipment…");
-      Promise.all(
+    const interior = model.getObjectByName("Interior layout") as THREE.Group | undefined;
+    const furnitureReady = interior && config.layout.length
+      ? upgradeInteriorAssets(
+        interior,
+        config.layout,
+        dimensions(config).floor,
+        assets,
+        () => currentEpoch === epoch.current,
+        () => {
+          renderer.shadowMap.needsUpdate = true;
+          refreshSelectionRef.current();
+          invalidateRef.current();
+        },
+      )
+      : Promise.resolve();
+    const equipmentReady = config.ac
+      ? Promise.all(
         (["indoor", "outdoor"] as const).map(async (kind) => {
           const asset = await assets.ac(kind);
           if (currentEpoch !== epoch.current) return;
@@ -262,24 +452,46 @@ export default forwardRef<ViewerHandle, Props>(function Viewport(
           model.getObjectByName(`${kind}-ac-slot`)?.add(wrapper);
         }),
       )
-        .then(() => {
-          if (currentEpoch === epoch.current) {
-            setNotice("");
-            renderer.shadowMap.needsUpdate = true;
-            invalidateRef.current();
-          }
-        })
-        .catch(() => {
-          if (currentEpoch === epoch.current)
-            setNotice("Climate model could not load. Refresh to retry.");
-        });
-    }
+      : Promise.resolve();
+    void Promise.all([furnitureReady, assets.whenTexturesReady(), environmentReady.current, equipmentReady])
+      .then(() => {
+        if (currentEpoch !== epoch.current) return;
+        renderer.shadowMap.needsUpdate = true;
+        invalidateRef.current();
+        refreshSelectionRef.current();
+        sceneReadyRef.current = true;
+        setSceneStatus({ ready: true, message: "", error: false });
+      })
+      .catch((error) => {
+        if (currentEpoch !== epoch.current) return;
+        sceneReadyRef.current = false;
+        setSceneStatus({ ready: false, message: error instanceof Error ? error.message : "The 3D scene could not load.", error: true });
+      });
   }, [config]);
   useEffect(() => {
     systemRef.current?.go(request.focus, config);
     invalidateRef.current();
   }, [request.sequence]);
+  useEffect(() => { refreshSelectionRef.current(); }, [selectedId, config.layout]);
   const dim = dimensions(config);
+  const selectedItem = config.layout.find((item) => item.id === selectedId);
+  const rotateSelected = (direction: -90 | 90) => {
+    if (!selectedItem || selectedItem.kind === "bathroom") return;
+    const rotation = ((selectedItem.rotation + direction + 360) % 360) as LayoutItem["rotation"];
+    const next = nearestFreePlacement({ ...selectedItem, rotation, onTopOf: undefined }, config.layout, dim.length, entryClearance(config.doorStyle, config.doorSide, dim.length, dim.width), dim.width);
+    if (!next) {
+      setEditNotice("Move this item into clear space before rotating it.");
+      return;
+    }
+    onLayoutChange(config.layout.map((item) => item.id === selectedItem.id ? next : item));
+    setEditNotice(`${catalogItem(selectedItem.kind).label} rotated to ${rotation}°.`);
+  };
+  const removeSelected = () => {
+    if (!selectedItem) return;
+    onLayoutChange(config.layout.filter((item) => item.id !== selectedItem.id));
+    onSelect(null);
+    setEditNotice(`${catalogItem(selectedItem.kind).label} removed.`);
+  };
   return (
     <main
       className="studio-viewer"
@@ -289,7 +501,7 @@ export default forwardRef<ViewerHandle, Props>(function Viewport(
       <div className="studio-viewer-label">
         <span>YOUR CONTAINER / LIVE PREVIEW</span>
         <strong>
-          {config.size}′ {config.highCube ? "High cube" : "Standard"}
+          {config.containers === 2 ? "2 × " : ""}{config.size}′ {config.highCube ? "High cube" : "Standard"}
         </strong>
         <small>
           {dim.length.toFixed(2)} × {dim.width.toFixed(2)} ×{" "}
@@ -314,28 +526,26 @@ export default forwardRef<ViewerHandle, Props>(function Viewport(
           <ArrowDownToLine size={17} />
         </button>
       </div>
-      {notice && (
-        <div className="studio-loading" role="status">
-          {notice}
+      <div className="studio-canvas-dock">
+        {selectedItem && <div className="studio-edit-bar" aria-label="Selected furniture controls">
+          <div className="studio-edit-detail"><strong>{catalogItem(selectedItem.kind).label}</strong><span><Move size={13}/> Drag freely · {selectedItem.rotation}°</span></div>
+          <div className="studio-edit-actions">
+            <button type="button" onClick={() => rotateSelected(-90)} disabled={selectedItem.kind === "bathroom"} aria-label="Rotate selected item left 90 degrees" title="Rotate left"><RotateCcw size={17}/></button>
+            <button type="button" onClick={() => rotateSelected(90)} disabled={selectedItem.kind === "bathroom"} aria-label="Rotate selected item right 90 degrees" title="Rotate right"><RotateCw size={17}/></button>
+            <button type="button" className="studio-edit-delete" onClick={removeSelected} aria-label="Delete selected item" title="Delete item"><Trash2 size={17}/></button>
+            <button type="button" onClick={() => onSelect(null)} aria-label="Deselect item" title="Deselect"><X size={17}/></button>
+          </div>
+        </div>}
+        <div className="studio-dock-main">
+          <button type="button" className="studio-dock-plan" onClick={onOpenPlan}><LayoutGrid size={17}/> Floor plan</button>
+          <div className="studio-dock-divider"/>
+          <div className="studio-view-tabs" aria-label="Camera views">
+            {(["layout", "exterior", "front", "left", "right", "interior"] as CameraFocus[]).map((view) => <button type="button" key={view} aria-pressed={request.focus === view} onClick={() => onFocus(view)}>{view === "layout" ? "Layout 3D" : view[0].toUpperCase() + view.slice(1)}</button>)}
+          </div>
         </div>
-      )}
-      <div className="studio-camera-bar" aria-label="Camera views">
-        <button type="button" onClick={onOpenPlan}><LayoutGrid size={14}/> Floor plan</button>
-        {(
-          ["layout", "exterior", "front", "left", "right", "interior"] as CameraFocus[]
-        ).map((view) => (
-          <button
-            type="button"
-            key={view}
-            aria-pressed={request.focus === view}
-            className={request.focus === view ? "selected" : ""}
-            onClick={() => onFocus(view)}
-          >
-            {view === "layout" ? "Layout 3D" : view[0].toUpperCase() + view.slice(1)}
-          </button>
-        ))}
+        <span className="studio-dock-hint" role="status">{selectedItem ? editNotice : "Drag furniture over other pieces; release to find clear space"}</span>
       </div>
-      <span className="studio-viewer-hint">Drag to orbit · Scroll to zoom</span>
+      {!sceneStatus.ready && <div className="studio-scene-gate" role="status" aria-live="polite"><div className="studio-scene-gate-card"><span>CONTAINER STUDIO / LIVE PREVIEW</span><strong>{sceneStatus.error ? "Preview could not load" : "Preparing your 3D view"}</strong><p>{sceneStatus.message}</p>{!sceneStatus.error ? <div className="studio-scene-gate-track"><i/></div> : <button type="button" onClick={() => window.location.reload()}>Retry loading</button>}</div></div>}
     </main>
   );
 });

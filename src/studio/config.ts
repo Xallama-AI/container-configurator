@@ -51,6 +51,7 @@ export type CameraFocus =
   | "door-right";
 export interface StudioConfig {
   size: 20 | 40;
+  containers: 1 | 2;
   highCube: boolean;
   color: string;
   windowStyle: WindowStyle;
@@ -59,6 +60,8 @@ export interface StudioConfig {
   doorSide: Side;
   rearRollup: boolean;
   cargoOpen: boolean;
+  sideDoorOpen: boolean;
+  rearRollupOpen: boolean;
   cutaway: boolean;
   floor: FloorFinish;
   walls: WallFinish;
@@ -70,6 +73,7 @@ export interface StudioConfig {
 }
 export const DEFAULT_CONFIG: StudioConfig = {
   size: 40,
+  containers: 1,
   highCube: true,
   color: "#373d42",
   windowStyle: "medium",
@@ -78,6 +82,8 @@ export const DEFAULT_CONFIG: StudioConfig = {
   doorSide: "left",
   rearRollup: false,
   cargoOpen: false,
+  sideDoorOpen: false,
+  rearRollupOpen: false,
   cutaway: false,
   floor: "natural-oak",
   walls: "white",
@@ -169,7 +175,7 @@ export const FLOORS: { id: FloorFinish; name: string; note: string }[] = [
 export function dimensions(config: StudioConfig) {
   return {
     length: config.size === 20 ? 6.058 : 12.192,
-    width: 2.438,
+    width: 2.438 * config.containers,
     height: config.highCube ? 2.896 : 2.591,
     base: 0.18,
     floor: 0.32,
